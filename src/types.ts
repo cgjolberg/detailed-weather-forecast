@@ -181,7 +181,7 @@ export interface WeatherEntityAttributes extends HassEntityAttributeBase {
 
 export interface ForecastEvent {
   type: 'hourly' | 'daily' | 'twice_daily';
-  forecast: [ForecastAttribute] | null;
+  forecast: ForecastAttribute[] | null;
 }
 
 export interface WeatherEntity extends HassEntityBase {

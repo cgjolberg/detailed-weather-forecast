@@ -28,7 +28,7 @@ import {
 } from './types';
 import { AnimationManager } from './animations/animation-manager';
 import { enableMomentumScroll } from './utils/momentum-scroll';
-import type { ExtendedHomeAssistant } from './weather';
+import type { ExtendedHomeAssistant, ModernForecastType } from './weather';
 import { formatWeatherAttribute, getSupportedForecastTypes, subscribeForecast, getTimeOfDay } from './weather';
 
 // Styled console banner so your card is easy to spot in the browser console.
@@ -387,10 +387,10 @@ export class DetailedWeatherForecast extends LitElement {
     this._subscriptions = { hourly: undefined, daily: undefined };
   }
 
-  private async _subscribeForecast(type: ForecastType) {
+  private async _subscribeForecast(type: ForecastType, forecastType: ModernForecastType = type) {
     if (this._subscriptions[type]) return;
 
-    this._subscriptions[type] = subscribeForecast(this._hass!, this._entity, type, (event) => {
+    this._subscriptions[type] = subscribeForecast(this._hass!, this._entity, forecastType, (event) => {
       if (type === 'hourly') this._forecastHourlyEvent = event;
       if (type === 'daily') this._forecastDailyEvent = event;
     }).catch((e) => {
@@ -413,13 +413,14 @@ export class DetailedWeatherForecast extends LitElement {
     if (!shouldSubscribe) return;
 
     const supportedForecastTypes = getSupportedForecastTypes(this._state);
+    const dailyForecastType = this._getDailyForecastType(supportedForecastTypes);
 
-    (['hourly', 'daily'] as ForecastType[]).forEach((type) => {
-      const configKey = `${type}_forecast` as 'hourly_forecast' | 'daily_forecast';
-      if (this._config[configKey] && supportedForecastTypes.includes(type)) {
-        this._subscribeForecast(type);
-      }
-    });
+    if (this._config.hourly_forecast && supportedForecastTypes.includes('hourly')) {
+      this._subscribeForecast('hourly');
+    }
+    if (this._config.daily_forecast && dailyForecastType) {
+      this._subscribeForecast('daily', dailyForecastType);
+    }
   }
 
   private _handleEditorPreviewBackground = (ev: Event) => {
@@ -442,12 +443,13 @@ export class DetailedWeatherForecast extends LitElement {
       DetailedWeatherForecast._editorShowAttributes = open;
     } else if (type === 'daily_info') {
       if (open) {
-        if (!this._selectedDailyForecast && this._forecastDailyEvent?.forecast?.length) {
-          this._selectedDailyForecast = this._forecastDailyEvent.forecast[0];
+        const forecast = this._getDisplayDailyForecast();
+        if (!this._selectedDailyForecast && forecast.length) {
+          this._selectedDailyForecast = forecast[0];
           DetailedWeatherForecast._editorDailyShowAttributes = this._selectedDailyForecast.datetime;
         }
-        if (!this._visuallySelectedDaily && this._forecastDailyEvent?.forecast?.length) {
-          this._visuallySelectedDaily = this._forecastDailyEvent.forecast[0];
+        if (!this._visuallySelectedDaily && forecast.length) {
+          this._visuallySelectedDaily = forecast[0];
           DetailedWeatherForecast._editorDailySelected = this._visuallySelectedDaily.datetime;
         }
       } else {
@@ -501,7 +503,7 @@ export class DetailedWeatherForecast extends LitElement {
     const forecastDailyChanged = changedProps.has('_forecastDailyEvent');
 
     if (forecastDailyChanged && this._forecastDailyEvent?.forecast?.length) {
-      const forecast = this._forecastDailyEvent.forecast;
+      const forecast = this._getDisplayDailyForecast();
       if (!this._visuallySelectedDaily) {
         this._visuallySelectedDaily = DetailedWeatherForecast._editorDailySelected
           ? forecast.find((f) => f.datetime === DetailedWeatherForecast._editorDailySelected) || forecast[0]
@@ -608,7 +610,7 @@ export class DetailedWeatherForecast extends LitElement {
     const showHeader = this._config.show_header !== false;
     const showForecasts = dailyEnabled || hourlyEnabled;
     const showForecastDivider = dailyEnabled && hourlyEnabled;
-    const dailyForecastRaw = this._forecastDailyEvent?.forecast ?? [];
+    const dailyForecastRaw = this._getDisplayDailyForecast();
     const hourlyForecastRaw = this._forecastHourlyEvent?.forecast ?? [];
     const dailyForecast = this._applySolarForecastToForecast(dailyForecastRaw, 'daily');
     const hourlyForecast = this._applySolarForecastToForecast(hourlyForecastRaw, 'hourly');
@@ -852,6 +854,96 @@ export class DetailedWeatherForecast extends LitElement {
   }
 
   // Private methods
+
+  private _getDailyForecastType(supportedForecastTypes: ModernForecastType[]): ModernForecastType | undefined {
+    if (supportedForecastTypes.includes('daily')) {
+      return 'daily';
+    }
+    if (supportedForecastTypes.includes('twice_daily')) {
+      return 'twice_daily';
+    }
+    return undefined;
+  }
+
+  private _getDisplayDailyForecast(): ForecastAttribute[] {
+    const forecast = this._forecastDailyEvent?.forecast ?? [];
+    if (this._forecastDailyEvent?.type === 'twice_daily') {
+      return this._normalizeTwiceDailyForecast(forecast);
+    }
+    return forecast;
+  }
+
+  private _normalizeTwiceDailyForecast(forecast: ForecastAttribute[]): ForecastAttribute[] {
+    if (!forecast?.length) {
+      return [];
+    }
+
+    const grouped = new Map<string, ForecastAttribute[]>();
+
+    forecast.forEach((item) => {
+      if (!item?.datetime || !this._hasFiniteNumber(item.temperature)) {
+        return;
+      }
+      const date = new Date(item.datetime);
+      if (!Number.isFinite(date.getTime())) {
+        return;
+      }
+      const key = this._formatSolarDayKey(date);
+      const entries = grouped.get(key) ?? [];
+      entries.push(item);
+      grouped.set(key, entries);
+    });
+
+    return Array.from(grouped.values()).map((entries) => this._mergeTwiceDailyForecastEntries(entries));
+  }
+
+  private _mergeTwiceDailyForecastEntries(entries: ForecastAttribute[]): ForecastAttribute {
+    const dayEntry =
+      entries.find((entry) => entry.is_daytime === true) ??
+      entries.find((entry) => entry.is_daytime !== false) ??
+      entries[0];
+    const nightEntry = entries.find((entry) => entry.is_daytime === false);
+    const high = this._firstFiniteNumber(
+      dayEntry?.temperature,
+      ...entries.filter((entry) => entry.is_daytime !== false).map((entry) => entry.temperature),
+      ...entries.map((entry) => entry.temperature),
+    );
+    const low = this._firstFiniteNumber(
+      nightEntry && nightEntry !== dayEntry ? nightEntry.temperature : undefined,
+      dayEntry?.templow,
+      ...entries.filter((entry) => entry.is_daytime === false && entry !== dayEntry).map((entry) => entry.temperature),
+      ...entries.map((entry) => entry.templow),
+    );
+    const precipitation = this._sumFiniteNumbers(entries.map((entry) => entry.precipitation));
+    const precipitationProbability = this._maxFiniteNumber(entries.map((entry) => entry.precipitation_probability));
+
+    return {
+      ...dayEntry,
+      is_daytime: true,
+      temperature: high ?? dayEntry.temperature,
+      templow: low,
+      ...(precipitation !== undefined ? { precipitation } : {}),
+      ...(precipitationProbability !== undefined ? { precipitation_probability: precipitationProbability } : {}),
+    };
+  }
+
+  private _hasFiniteNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value);
+  }
+
+  private _firstFiniteNumber(...values: unknown[]): number | undefined {
+    return values.find((value): value is number => this._hasFiniteNumber(value));
+  }
+
+  private _maxFiniteNumber(values: unknown[]): number | undefined {
+    const numbers = values.filter((value): value is number => this._hasFiniteNumber(value));
+    return numbers.length ? Math.max(...numbers) : undefined;
+  }
+
+  private _sumFiniteNumbers(values: unknown[]): number | undefined {
+    const numbers = values.filter((value): value is number => this._hasFiniteNumber(value));
+    return numbers.length ? numbers.reduce((sum, value) => sum + value, 0) : undefined;
+  }
 
   private _handleHourlyNewDay(e: CustomEvent<{ date: Date }>) {
     if (this._isProgrammaticScroll) {

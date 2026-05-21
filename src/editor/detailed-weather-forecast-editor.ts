@@ -1625,8 +1625,13 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
       if (supported.includes('hourly')) {
         needed.add('hourly');
       }
-      if (supported.includes('daily') || supported.includes('twice_daily')) {
-        needed.add('daily');
+      const dailyForecastType = supported.includes('daily')
+        ? 'daily'
+        : supported.includes('twice_daily')
+          ? 'twice_daily'
+          : undefined;
+      if (dailyForecastType) {
+        needed.add(dailyForecastType);
       }
       if (!needed.size) {
         needed.add('daily');
@@ -1635,7 +1640,7 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
       const nextLoading = { ...this._forecastOptionsLoading };
       let loadingChanged = false;
 
-      (['hourly', 'daily'] as ModernForecastType[]).forEach((type) => {
+      (['hourly', 'daily', 'twice_daily'] as ModernForecastType[]).forEach((type) => {
         if (!needed.has(type)) {
           this._teardownForecastOptionSubscriptions([type]);
           if (nextLoading[type]) {
@@ -1707,7 +1712,7 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
       if (next.join('|') !== this._dailyExtraOptions.join('|')) {
         this._dailyExtraOptions = next;
       }
-      this._forecastOptionsLoading = { ...this._forecastOptionsLoading, daily: false };
+      this._forecastOptionsLoading = { ...this._forecastOptionsLoading, daily: false, twice_daily: false };
     }
 
     this._cacheForecastOptions();
@@ -1797,7 +1802,7 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
   }
 
   private _teardownForecastOptionSubscriptions(types?: ModernForecastType[]) {
-    const targets = types ?? (['hourly', 'daily'] as ModernForecastType[]);
+    const targets = types ?? (['hourly', 'daily', 'twice_daily'] as ModernForecastType[]);
     const nextLoading = { ...this._forecastOptionsLoading };
     let loadingChanged = false;
 

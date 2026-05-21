@@ -16,7 +16,7 @@
   "scripts": {
     "start": "rollup -c rollup.config.dev.js --watch",
     "build": "yarn clean && yarn lint && yarn rollup",
-    "clean": "rm -rf dist",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "lint": "eslint src/**/*.ts",
     "rollup": "rollup -c",
     "format": "prettier --write ."
