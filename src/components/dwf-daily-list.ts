@@ -40,13 +40,16 @@ export class DWFDailyList extends LitElement {
   }
 
   private _renderDailyItem(item: ForecastAttribute, precipitationScale?: number): TemplateResult | typeof nothing {
-    if (!this._hasValidValue(item.temperature) || !this._hasValidValue(item.condition)) {
+    if (
+      (!this._hasValidValue(item.temperature) && !this._hasValidValue(item.templow)) ||
+      !this._hasValidValue(item.condition)
+    ) {
       return nothing;
     }
     const date = new Date(item.datetime);
     const newDay = isNewDay(date, this.hass.config as any);
 
-    const tempColor = this._getTemperatureColor(item.temperature);
+    const tempColor = this._hasValidValue(item.temperature) ? this._getTemperatureColor(item.temperature!) : undefined;
     const tempLowColor = this._hasValidValue(item.templow) ? this._getTemperatureColor(item.templow!) : undefined;
 
     const isSelected = this.selectedForecast?.datetime === item.datetime;
@@ -61,7 +64,9 @@ export class DWFDailyList extends LitElement {
           ${!newDay ? formatDateDayTwoDigit(date, this.hass.locale as any, this.hass.config as any) : ''}
         </div>
         <div class="forecast-image-icon">${getWeatherStateIcon(item, this, false, this.iconMap)}</div>
-        <div class="temp" style=${styleMap({ color: tempColor })}>${Math.round(item.temperature)}°</div>
+        <div class="temp" style=${tempColor ? styleMap({ color: tempColor }) : nothing}>
+          ${this._hasValidValue(item.temperature) ? html`${Math.round(item.temperature!)}°` : '—'}
+        </div>
         <div class="templow" style=${tempLowColor ? styleMap({ color: tempLowColor }) : nothing}>
           ${this._hasValidValue(item.templow) ? html`${Math.round(item.templow!)}°` : '—'}
         </div>

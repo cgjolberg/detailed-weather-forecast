@@ -898,20 +898,23 @@ export class DetailedWeatherForecast extends LitElement {
   }
 
   private _mergeTwiceDailyForecastEntries(entries: ForecastAttribute[]): ForecastAttribute {
-    const dayEntry =
-      entries.find((entry) => entry.is_daytime === true) ??
-      entries.find((entry) => entry.is_daytime !== false) ??
-      entries[0];
-    const nightEntry = entries.find((entry) => entry.is_daytime === false);
+    const daytimeEntries = entries.filter((entry) => entry.is_daytime === true);
+    const unknownDaytimeEntries = entries.filter((entry) => entry.is_daytime !== false);
+    const nighttimeEntries = entries.filter((entry) => entry.is_daytime === false);
+    const dayEntry = daytimeEntries[0] ?? unknownDaytimeEntries[0] ?? entries[0];
+    const nightEntry = nighttimeEntries[0];
     const high = this._firstFiniteNumber(
-      dayEntry?.temperature,
-      ...entries.filter((entry) => entry.is_daytime !== false).map((entry) => entry.temperature),
-      ...entries.map((entry) => entry.temperature),
+      ...daytimeEntries.map((entry) => entry.temperature),
+      ...unknownDaytimeEntries.map((entry) => entry.temperature),
+      ...entries.map((entry) => entry.templow),
     );
+    const nightOnlyLow =
+      daytimeEntries.length || unknownDaytimeEntries.length ? undefined : this._firstFiniteNumber(nightEntry?.temperature);
     const low = this._firstFiniteNumber(
+      nightOnlyLow,
       nightEntry && nightEntry !== dayEntry ? nightEntry.temperature : undefined,
       dayEntry?.templow,
-      ...entries.filter((entry) => entry.is_daytime === false && entry !== dayEntry).map((entry) => entry.temperature),
+      ...nighttimeEntries.filter((entry) => entry !== dayEntry).map((entry) => entry.temperature),
       ...entries.map((entry) => entry.templow),
     );
     const precipitation = this._sumFiniteNumbers(entries.map((entry) => entry.precipitation));
@@ -920,7 +923,7 @@ export class DetailedWeatherForecast extends LitElement {
     return {
       ...dayEntry,
       is_daytime: true,
-      temperature: high ?? dayEntry.temperature,
+      temperature: high,
       templow: low,
       ...(precipitation !== undefined ? { precipitation } : {}),
       ...(precipitationProbability !== undefined ? { precipitation_probability: precipitationProbability } : {}),

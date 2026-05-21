@@ -39,6 +39,9 @@ try {
   }
 
   scp $localFilePath $target
+  if ($LASTEXITCODE -ne 0) {
+    throw "scp failed with exit code $LASTEXITCODE"
+  }
   Write-Host "Deploy complete. Bump your Lovelace resource query string, for example ?v=dev5."
 } finally {
   Pop-Location
