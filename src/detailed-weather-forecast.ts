@@ -1129,16 +1129,6 @@ export class DetailedWeatherForecast extends LitElement {
       if (chip.type === 'sun_event') {
         const formatted = this._formatHeaderSunEvent(chip);
         if (!formatted) {
-          displays.push({
-            label: chip.name || 'Sun',
-            display: MISSING_ATTRIBUTE_TEXT,
-            missing: true,
-            tooltip: chip.name || 'Sun',
-            type: chip.type,
-            tap_action,
-            hold_action,
-            double_tap_action,
-          });
           return;
         }
 
@@ -1164,6 +1154,9 @@ export class DetailedWeatherForecast extends LitElement {
         }
 
         const formatted = this._formatHeaderEntity(entity);
+        if (formatted.missing) {
+          return;
+        }
         const tooltip = `${formatted.entity}: ${formatted.display}`;
         const label = formatted.entity;
         const entityIcon = icon || formatted.icon;
@@ -1200,17 +1193,7 @@ export class DetailedWeatherForecast extends LitElement {
       );
 
       if (!formatted) {
-        displays.push({
-          label: attribute,
-          display: MISSING_ATTRIBUTE_TEXT,
-          missing: true,
-          tooltip: attribute,
-          type: chip.type,
-          tap_action,
-          hold_action,
-          double_tap_action,
-          icon,
-        });
+        return;
       } else {
         const tooltip = `${formatted.name}: ${formatted.value}`;
 
