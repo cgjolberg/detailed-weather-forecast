@@ -143,7 +143,7 @@ export interface ForecastAttributeConfig {
 }
 
 export interface ForecastAttribute {
-  temperature: number;
+  temperature?: number;
   datetime: string;
   templow?: number;
   precipitation?: number;
