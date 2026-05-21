@@ -36,6 +36,14 @@ This card is a further development of the [Weather Forecast Extended Card](https
 3. Search for "Detailed Weather Forecast Card" in HACS, install the latest release, and let HACS add the resource to your dashboard automatically.
 4. Reload the browser or clear the Lovelace cache if the new card type is not immediately available.
 
+## Deployment
+
+Deploy from this repo root with:
+
+```powershell
+.\deploy.cmd
+```
+
 ## Usage
 
 Once the resource is installed, add a new card in the Lovelace dashboard editor and search for **Detailed Weather Forecast**. The visual editor exposes every option listed below. You can also configure the card in YAML:
