@@ -776,7 +776,7 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
 
   private _addListItem(type: 'header_chips' | 'header_info' | 'daily_info' | 'hourly_info') {
     const newList = this._config?.[type] ? [...(this._config[type] as any[])] : [];
-    if (type === 'header_chips' && newList.length >= 3) return;
+    if (type === 'header_chips' && newList.length >= 4) return;
 
     const newItem =
       type === 'header_chips' || type === 'header_info' ? { type: 'attribute', attribute: '' } : { attribute: '' };
@@ -1498,7 +1498,7 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
   }
 
   private _normalizeHeaderChips(config: Partial<DetailedWeatherForecastConfig>): HeaderAttribute[] {
-    const limit = 3;
+    const limit = 4;
     const normalized: HeaderAttribute[] = [];
 
     if (Array.isArray(config.header_chips)) {
@@ -1541,6 +1541,27 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
           if (chip.double_tap_action !== undefined) normalizedChip.double_tap_action = chip.double_tap_action;
           if (icon !== undefined) normalizedChip.icon = icon;
           if (name) normalizedChip.name = name;
+          normalized.push(normalizedChip);
+          continue;
+        }
+
+        if (chip.type === 'sun_event') {
+          const dawn_entity = typeof chip.dawn_entity === 'string' ? chip.dawn_entity.trim() : '';
+          const dusk_entity = typeof chip.dusk_entity === 'string' ? chip.dusk_entity.trim() : '';
+          const name = typeof chip.name === 'string' ? chip.name.trim() : undefined;
+          const sunrise_icon = typeof chip.sunrise_icon === 'string' ? chip.sunrise_icon.trim() : undefined;
+          const sunset_icon = typeof chip.sunset_icon === 'string' ? chip.sunset_icon.trim() : undefined;
+          const normalizedChip: any = {
+            type: 'sun_event',
+            dawn_entity,
+            dusk_entity,
+          };
+          if (chip.tap_action !== undefined) normalizedChip.tap_action = chip.tap_action;
+          if (chip.hold_action !== undefined) normalizedChip.hold_action = chip.hold_action;
+          if (chip.double_tap_action !== undefined) normalizedChip.double_tap_action = chip.double_tap_action;
+          if (name) normalizedChip.name = name;
+          if (sunrise_icon !== undefined) normalizedChip.sunrise_icon = sunrise_icon;
+          if (sunset_icon !== undefined) normalizedChip.sunset_icon = sunset_icon;
           normalized.push(normalizedChip);
         }
       }

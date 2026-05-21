@@ -101,28 +101,37 @@ export type SunEventType = 'sunrise' | 'sunset';
 
 export type SunTimesByDay = Record<string, Partial<Record<SunEventType, number>>>;
 
-export type HeaderAttribute = HeaderWeatherAttribute | HeaderEntity;
+export type HeaderAttribute = HeaderWeatherAttribute | HeaderEntity | HeaderSunEvent;
 
-export interface HeaderWeatherAttribute {
-  type: 'attribute';
-  attribute: string;
+export interface HeaderActionConfig {
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
   double_tap_action?: ActionConfig;
+}
+
+export interface HeaderWeatherAttribute extends HeaderActionConfig {
+  type: 'attribute';
+  attribute: string;
   name?: string;
   icon?: string;
   unit?: string;
   divisor?: number;
 }
 
-export interface HeaderEntity {
+export interface HeaderEntity extends HeaderActionConfig {
   type: 'entity';
   entity: string;
-  tap_action?: ActionConfig;
-  hold_action?: ActionConfig;
-  double_tap_action?: ActionConfig;
   name?: string;
   icon?: string;
+}
+
+export interface HeaderSunEvent extends HeaderActionConfig {
+  type: 'sun_event';
+  dawn_entity: string;
+  dusk_entity: string;
+  name?: string;
+  sunrise_icon?: string;
+  sunset_icon?: string;
 }
 
 export interface ExtraForecastAttributeConfig {

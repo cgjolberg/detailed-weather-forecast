@@ -34,8 +34,12 @@ export class DwfHeaderChips extends LitElement {
 
     const headerChipsTemplate = this.headerChips.map((chip) => {
       const isEntity = chip.type === 'entity';
+      const actionEntity = chip.entity;
       const hasChipAction =
-        isEntity || hasAction(chip.tap_action) || hasAction(chip.hold_action) || hasAction(chip.double_tap_action);
+        Boolean(actionEntity) ||
+        hasAction(chip.tap_action) ||
+        hasAction(chip.hold_action) ||
+        hasAction(chip.double_tap_action);
       const chipClassMap = {
         'attribute-chip': true,
         missing: chip.missing,
@@ -49,7 +53,7 @@ export class DwfHeaderChips extends LitElement {
           role=${hasChipAction ? 'button' : undefined}
           tabindex=${hasChipAction ? 0 : undefined}
           .actionHandler=${actionHandler({
-            hasHold: isEntity || hasAction(chip.hold_action),
+            hasHold: Boolean(actionEntity) || hasAction(chip.hold_action),
             hasDoubleClick: hasAction(chip.double_tap_action),
           })}
           @action=${hasChipAction
@@ -62,7 +66,7 @@ export class DwfHeaderChips extends LitElement {
                       ? chip.double_tap_action
                       : chip.tap_action;
 
-                this._handleAction(ev, actionConfig, chip.type === 'entity' ? chip.entity : undefined);
+                this._handleAction(ev, actionConfig, actionEntity);
               }
             : undefined}
         >

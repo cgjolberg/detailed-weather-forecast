@@ -126,7 +126,7 @@ hourly_extra_attribute:
 | `header_condition`             | object           | none                                    | Configuration for the header condition pill including `tap_action`, `hold_action` and `double_tap_action`.                                                                             |
 | `hourly_extra_attribute`       | object           | none                                    | Optional third text line under the hourly precipitation rows. Includes `attribute`, `unit`, `divisor`, `color`, and `dim_below`.                                                       |
 | `daily_extra_attribute`        | object           | none                                    | Optional third text line under the daily precipitation rows. Includes `attribute`, `unit`, `divisor`, `color`, and `dim_below`.                                                        |
-| `header_chips`                 | array            | `[]`                                    | Up to three chip definitions shown in the header. Each chip can display an entity attribute or another entity's state and may include its own `icon` and `tap_action`.                 |
+| `header_chips`                 | array            | `[]`                                    | Up to four chip definitions shown in the header. Each chip can display an entity attribute, another entity's state, or the next dawn/dusk event and may include its own actions.       |
 | `header_info`                  | array            | `[]`                                    | A list of attribute objects to show in the expandable detail view for the current weather conditions.                                                                                  |
 | `daily_info`                   | array            | `[]`                                    | A list of attribute objects to show in the expandable detail view for each daily forecast item.                                                                                        |
 | `hourly_info`                  | array            | `[]`                                    | A list of attribute objects to show in the expandable detail view for each hourly forecast item.                                                                                       |
@@ -140,7 +140,7 @@ hourly_extra_attribute:
 
 You can display additional weather details or sensor states in the header area using two different methods: **Header Chips** and **Header Info**.
 
-- **Header Chips (`header_chips`)**: Small, pill-shaped indicators that are **always visible** above the current temperature. You can configure up to three chips.
+- **Header Chips (`header_chips`)**: Small, pill-shaped indicators that are **always visible** above the current temperature. You can configure up to four chips.
 - **Header Info (`header_info`)**: An expandable list of attributes that is **hidden by default**. It becomes visible only when a user clicks on the weather condition text in the header.
   > **⚠️ Warning**: If you override the default tap action of the condition text (using `header_condition.tap_action`), the toggle to show or hide the `header_info` list will no longer work!
 

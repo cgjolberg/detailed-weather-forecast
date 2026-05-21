@@ -5,6 +5,7 @@ import { html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { actionHandler } from '../action-handler-directive';
+import { formatTime } from '../date-time';
 import { HeaderAttribute, WeatherEntity } from '../types';
 import { executeAction, ExtendedHomeAssistant, formatWeatherAttribute } from '../weather';
 
@@ -44,7 +45,16 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     let name: string | undefined;
     let entityPicture: string | undefined;
 
-    if (attrConfig.type == 'entity') {
+    if (attrConfig.type === 'sun_event') {
+      const sunEvent = this._formatSunEvent(attrConfig);
+      if (!sunEvent) {
+        return nothing;
+      }
+      stateObj = this.hass.states[sunEvent.entity];
+      value = sunEvent.display;
+      icon = sunEvent.icon;
+      name = sunEvent.label;
+    } else if (attrConfig.type == 'entity') {
       // HeaderEntity
       stateObj = this.hass.states[attrConfig.entity];
       if (!stateObj) {
@@ -85,8 +95,14 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     }
 
     const isEntity = attrConfig.type === 'entity';
-    const hasTapAction = isEntity || hasAction(attrConfig.tap_action);
-    const hasHoldAction = isEntity || hasAction(attrConfig.hold_action);
+    const actionEntity =
+      attrConfig.type === 'entity' && attrConfig.entity
+        ? attrConfig.entity
+        : attrConfig.type === 'sun_event' && stateObj
+          ? stateObj.entity_id
+          : undefined;
+    const hasTapAction = Boolean(actionEntity) || hasAction(attrConfig.tap_action);
+    const hasHoldAction = Boolean(actionEntity) || hasAction(attrConfig.hold_action);
     const hasDoubleTapAction = hasAction(attrConfig.double_tap_action);
     const hasAnyAction = hasTapAction || hasHoldAction || hasDoubleTapAction;
     const attributeClassMap = {
@@ -110,7 +126,7 @@ export class DwfCurrentWeatherAttributes extends LitElement {
         ${hasAnyAction ? html`<mwc-ripple></mwc-ripple>` : nothing}
         ${entityPicture
           ? html`<img class="dwf-current-attribute-icon entity-picture-icon" src=${entityPicture} alt=${name || ''} />`
-          : isEntity
+          : isEntity || attrConfig.type === 'sun_event'
             ? html`<ha-state-icon
                 class="dwf-current-attribute-icon"
                 .hass=${this.hass}
@@ -140,8 +156,58 @@ export class DwfCurrentWeatherAttributes extends LitElement {
           : attrConfig.tap_action;
 
     const entityFallback =
-      attrConfig.type === 'entity' && attrConfig.entity ? attrConfig.entity : this.weatherEntity.entity_id;
+      attrConfig.type === 'entity' && attrConfig.entity
+        ? attrConfig.entity
+        : attrConfig.type === 'sun_event'
+          ? this._formatSunEvent(attrConfig)?.entity || this.weatherEntity.entity_id
+          : this.weatherEntity.entity_id;
     executeAction(this, this.hass, actionConfig, entityFallback, action);
+  }
+
+  private _formatSunEvent(attrConfig: HeaderAttribute):
+    | {
+        label: string;
+        display: string;
+        icon: string;
+        entity: string;
+      }
+    | undefined {
+    if (attrConfig.type !== 'sun_event') {
+      return undefined;
+    }
+
+    const dawn = this._getFutureTimestamp(attrConfig.dawn_entity);
+    const dusk = this._getFutureTimestamp(attrConfig.dusk_entity);
+    const next = [dawn, dusk].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
+      (a, b) => a.time - b.time,
+    )[0];
+
+    if (!next) {
+      return undefined;
+    }
+
+    const isDawn = next.entity === attrConfig.dawn_entity;
+    const label = attrConfig.name || (isDawn ? 'Sunrise' : 'Sunset');
+    const icon = isDawn
+      ? attrConfig.sunrise_icon || 'mdi:weather-sunset-up'
+      : attrConfig.sunset_icon || 'mdi:weather-sunset-down';
+    const display = formatTime(new Date(next.time), this.hass.locale as any, this.hass.config as any);
+
+    return { label, display, icon, entity: next.entity };
+  }
+
+  private _getFutureTimestamp(entity: string): { entity: string; time: number } | undefined {
+    const state = this.hass?.states[entity];
+    if (!state) {
+      return undefined;
+    }
+
+    const time = new Date(state.state).getTime();
+    if (!Number.isFinite(time)) {
+      return undefined;
+    }
+
+    return time >= Date.now() - 60 * 1000 ? { entity, time } : undefined;
   }
 }
 

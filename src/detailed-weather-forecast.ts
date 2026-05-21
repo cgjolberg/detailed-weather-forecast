@@ -5,6 +5,7 @@ import { html, LitElement, nothing } from 'lit';
 import { state } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import * as SunCalc from 'suncalc';
+import { formatTime } from './date-time';
 import './components/dwf-current-weather-attributes';
 import './components/dwf-daily-list';
 import './components/dwf-forecast-attributes';
@@ -227,7 +228,7 @@ export class DetailedWeatherForecast extends LitElement {
   }
 
   private _normalizeHeaderChips(config: DetailedWeatherForecastConfig): HeaderAttribute[] {
-    const limit = 3;
+    const limit = 4;
     const normalized: HeaderAttribute[] = [];
 
     if (Array.isArray(config.header_chips)) {
@@ -269,6 +270,33 @@ export class DetailedWeatherForecast extends LitElement {
           const icon = typeof chip.icon === 'string' ? chip.icon.trim() : undefined;
           const name = typeof chip.name === 'string' ? chip.name.trim() : undefined;
           normalized.push({ type: 'entity', entity, tap_action, hold_action, double_tap_action, name, icon });
+          continue;
+        }
+
+        if (chip.type === 'sun_event') {
+          const dawn_entity = typeof chip.dawn_entity === 'string' ? chip.dawn_entity.trim() : '';
+          const dusk_entity = typeof chip.dusk_entity === 'string' ? chip.dusk_entity.trim() : '';
+          const tap_action = typeof chip.tap_action === 'object' && chip.tap_action ? chip.tap_action : undefined;
+          const hold_action = typeof chip.hold_action === 'object' && chip.hold_action ? chip.hold_action : undefined;
+          const double_tap_action =
+            typeof chip.double_tap_action === 'object' && chip.double_tap_action ? chip.double_tap_action : undefined;
+          const name = typeof chip.name === 'string' ? chip.name.trim() : undefined;
+          const sunrise_icon = typeof chip.sunrise_icon === 'string' ? chip.sunrise_icon.trim() : undefined;
+          const sunset_icon = typeof chip.sunset_icon === 'string' ? chip.sunset_icon.trim() : undefined;
+
+          if (dawn_entity && dusk_entity) {
+            normalized.push({
+              type: 'sun_event',
+              dawn_entity,
+              dusk_entity,
+              tap_action,
+              hold_action,
+              double_tap_action,
+              name,
+              sunrise_icon,
+              sunset_icon,
+            });
+          }
         }
       }
     }
@@ -347,7 +375,7 @@ export class DetailedWeatherForecast extends LitElement {
     }
 
     if (Array.isArray(this._config.header_chips) && this._config.header_chips.length) {
-      return this._config.header_chips.slice(0, 3);
+      return this._config.header_chips.slice(0, 4);
     }
 
     return [];
@@ -1098,6 +1126,37 @@ export class DetailedWeatherForecast extends LitElement {
       const double_tap_action = hasAction(chip.double_tap_action) ? chip.double_tap_action : undefined;
       const icon = typeof (chip as any).icon === 'string' ? (chip as any).icon.trim() : undefined;
 
+      if (chip.type === 'sun_event') {
+        const formatted = this._formatHeaderSunEvent(chip);
+        if (!formatted) {
+          displays.push({
+            label: chip.name || 'Sun',
+            display: MISSING_ATTRIBUTE_TEXT,
+            missing: true,
+            tooltip: chip.name || 'Sun',
+            type: chip.type,
+            tap_action,
+            hold_action,
+            double_tap_action,
+          });
+          return;
+        }
+
+        displays.push({
+          label: formatted.label,
+          display: formatted.display,
+          missing: false,
+          tooltip: `${formatted.label}: ${formatted.display}`,
+          type: chip.type,
+          tap_action,
+          hold_action,
+          double_tap_action,
+          icon: formatted.icon,
+          entity: formatted.entity,
+        });
+        return;
+      }
+
       if (chip.type === 'entity') {
         const entity = chip.entity?.trim() ?? '';
         if (!entity) {
@@ -1170,6 +1229,49 @@ export class DetailedWeatherForecast extends LitElement {
     });
 
     return displays;
+  }
+
+  private _formatHeaderSunEvent(chip: HeaderAttribute): {
+    label: string;
+    display: string;
+    icon: string;
+    entity: string;
+  } | undefined {
+    if (chip.type !== 'sun_event' || !this._hass) {
+      return undefined;
+    }
+
+    const dawn = this._getFutureTimestamp(chip.dawn_entity);
+    const dusk = this._getFutureTimestamp(chip.dusk_entity);
+    const next = [dawn, dusk].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
+      (a, b) => a.time - b.time,
+    )[0];
+
+    if (!next) {
+      return undefined;
+    }
+
+    const isDawn = next.entity === chip.dawn_entity;
+    const label = chip.name || (isDawn ? 'Sunrise' : 'Sunset');
+    const icon = isDawn ? chip.sunrise_icon || 'mdi:weather-sunset-up' : chip.sunset_icon || 'mdi:weather-sunset-down';
+    const display = formatTime(new Date(next.time), this._hass.locale as any, this._hass.config as any);
+
+    return { label, display, icon, entity: next.entity };
+  }
+
+  private _getFutureTimestamp(entity: string): { entity: string; time: number } | undefined {
+    const state = this._hass?.states[entity];
+    if (!state) {
+      return undefined;
+    }
+
+    const time = new Date(state.state).getTime();
+    if (!Number.isFinite(time)) {
+      return undefined;
+    }
+
+    const now = Date.now();
+    return time >= now - 60 * 1000 ? { entity, time } : undefined;
   }
 
   private _formatHeaderEntity(entity: string): {

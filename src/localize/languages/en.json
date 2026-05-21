@@ -73,7 +73,7 @@
       "custom_icons_description": "Override the default weather icons with any icon available in Home Assistant.",
       "header": "Header",
       "chips": "Chips",
-      "chips_description": "Choose Attribute or entity for up to three header chips.",
+      "chips_description": "Choose Attribute, entity, or next sunrise/sunset for up to four header chips.",
       "nowcast": "Nowcast",
       "nowcast_description": "Controls the minute-by-minute precipitation chart shown inside the header.",
       "header_info": "Weather condition info",
@@ -103,7 +103,8 @@
     },
     "selector": {
       "weather_attribute": "Weather Attribute",
-      "entity": "Entity"
+      "entity": "Entity",
+      "sun_event": "Next sunrise/sunset"
     }
   },
   "card": {

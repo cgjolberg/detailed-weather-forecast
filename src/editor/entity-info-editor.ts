@@ -33,7 +33,10 @@ type HaFormSchema = {
 };
 
 const computeSchema = memoizeOne(
-  (type: 'attribute' | 'entity', attributeOptions: Array<{ value: string; label: string }>): HaFormSchema[] => {
+  (
+    type: 'attribute' | 'entity' | 'sun_event',
+    attributeOptions: Array<{ value: string; label: string }>,
+  ): HaFormSchema[] => {
     const schema: HaFormSchema[] = [
       {
         name: 'type',
@@ -42,6 +45,7 @@ const computeSchema = memoizeOne(
             options: [
               { value: 'attribute', label: localize('editor.selector.weather_attribute') },
               { value: 'entity', label: localize('editor.selector.entity') },
+              { value: 'sun_event', label: localize('editor.selector.sun_event') },
             ],
           },
         },
@@ -50,6 +54,9 @@ const computeSchema = memoizeOne(
 
     if (type === 'entity') {
       schema.push({ name: 'entity', selector: { entity: {} } });
+    } else if (type === 'sun_event') {
+      schema.push({ name: 'dawn_entity', selector: { entity: {} } });
+      schema.push({ name: 'dusk_entity', selector: { entity: {} } });
     } else {
       // attribute
       schema.push({
@@ -88,7 +95,7 @@ export class HeaderInfoEditor extends LitElement {
   @property({ attribute: false }) public weatherEntity?: string;
   @property({ attribute: false }) public config?: HeaderAttribute;
   @property({ attribute: false }) public usedAttributes?: string[];
-  @state() private _type: 'attribute' | 'entity' = 'attribute';
+  @state() private _type: 'attribute' | 'entity' | 'sun_event' = 'attribute';
   @state() private _interactionsExpanded = false;
 
   willUpdate(changedProperties: PropertyValues): void {

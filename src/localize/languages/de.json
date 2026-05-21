@@ -103,6 +103,7 @@
     },
     "selector": {
       "weather_attribute": "Wetter-Attribut",
+      "sun_event": "Naechster Sonnenauf-/untergang",
       "entity": "Entität"
     }
   },
