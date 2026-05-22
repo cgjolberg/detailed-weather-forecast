@@ -172,7 +172,7 @@ export class DetailedWeatherForecast extends LitElement {
       moon_phase_entity: config.moon_phase_entity,
       header_temperature: config.header_temperature,
       header_condition: config.header_condition,
-      header_condition_font_size: this._normalizeCssSizeValue(config.header_condition_font_size),
+      header_font_size: this._normalizeCssSizeValue(config.header_font_size),
       header_chips: normalizedHeaderChips,
       icon_map: normalizedIconMap,
       daily_min_gap: normalizedDailyMinGap,
@@ -767,8 +767,8 @@ export class DetailedWeatherForecast extends LitElement {
       headerStyles['--dwf-header-height'] = 'calc(4 * var(--row-height, 56px))';
     }
 
-    if (this._config.header_condition_font_size) {
-      headerStyles['--dwf-header-condition-font-size'] = String(this._config.header_condition_font_size);
+    if (this._config.header_font_size) {
+      headerStyles['--dwf-header-condition-font-size'] = String(this._config.header_font_size);
     }
 
     const nowcastPanelTemplate = html`
