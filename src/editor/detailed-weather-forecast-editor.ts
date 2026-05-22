@@ -1547,14 +1547,20 @@ export class DetailedWeatherForecastEditor extends LitElement implements Lovelac
 
         if (chip.type === 'sun_event') {
           const dawn_entity = typeof chip.dawn_entity === 'string' ? chip.dawn_entity.trim() : '';
-          const dusk_entity = typeof chip.dusk_entity === 'string' ? chip.dusk_entity.trim() : '';
+          const sunset_entity =
+            typeof chip.sunset_entity === 'string'
+              ? chip.sunset_entity.trim()
+              : typeof chip.dusk_entity === 'string'
+                ? chip.dusk_entity.trim()
+                : '';
           const name = typeof chip.name === 'string' ? chip.name.trim() : undefined;
           const sunrise_icon = typeof chip.sunrise_icon === 'string' ? chip.sunrise_icon.trim() : undefined;
           const sunset_icon = typeof chip.sunset_icon === 'string' ? chip.sunset_icon.trim() : undefined;
           const normalizedChip: any = {
             type: 'sun_event',
             dawn_entity,
-            dusk_entity,
+            sunset_entity,
+            dusk_entity: sunset_entity,
           };
           if (chip.tap_action !== undefined) normalizedChip.tap_action = chip.tap_action;
           if (chip.hold_action !== undefined) normalizedChip.hold_action = chip.hold_action;

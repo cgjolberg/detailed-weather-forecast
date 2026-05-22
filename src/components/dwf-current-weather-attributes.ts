@@ -176,9 +176,10 @@ export class DwfCurrentWeatherAttributes extends LitElement {
       return undefined;
     }
 
+    const sunsetEntity = attrConfig.sunset_entity || attrConfig.dusk_entity;
     const dawn = this._getFutureTimestamp(attrConfig.dawn_entity);
-    const dusk = this._getFutureTimestamp(attrConfig.dusk_entity);
-    const next = [dawn, dusk].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
+    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity) : undefined;
+    const next = [dawn, sunset].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
       (a, b) => a.time - b.time,
     )[0];
 
@@ -187,7 +188,7 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     }
 
     const isDawn = next.entity === attrConfig.dawn_entity;
-    const label = attrConfig.name || (isDawn ? 'Sunrise' : 'Sunset');
+    const label = attrConfig.name || (isDawn ? 'Dawn' : 'Sunset');
     const icon = isDawn
       ? attrConfig.sunrise_icon || 'mdi:weather-sunset-up'
       : attrConfig.sunset_icon || 'mdi:weather-sunset-down';

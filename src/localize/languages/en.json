@@ -61,7 +61,7 @@
     },
     "section": {
       "gps_coordinates": "GPS Coordinates",
-      "gps_coordinates_description": "Needed for sunrise/sunset markers and day/night backgrounds",
+      "gps_coordinates_description": "Needed for dawn/sunset markers and day/night backgrounds",
       "use_home_assistant_location": "Use Home Assistant location",
       "latitude": "Latitude",
       "longitude": "Longitude",
@@ -73,7 +73,7 @@
       "custom_icons_description": "Override the default weather icons with any icon available in Home Assistant.",
       "header": "Header",
       "chips": "Chips",
-      "chips_description": "Choose Attribute, entity, or next sunrise/sunset for up to four header chips.",
+      "chips_description": "Choose Attribute, entity, or next dawn/sunset for up to four header chips.",
       "nowcast": "Nowcast",
       "nowcast_description": "Controls the minute-by-minute precipitation chart shown inside the header.",
       "header_info": "Weather condition info",
@@ -91,8 +91,8 @@
       "daily_forecast_info": "Daily Forecast Info",
       "daily_forecast_info_description": "Configure attributes to be displayed below the daily forecast when a day is selected.",
       "hourly_forecast": "Hourly forecast",
-      "sunrise_sunset": "Sunrise & Sunset",
-      "show_sunrise_sunset": "Show sunrise & sunset",
+      "sunrise_sunset": "Dawn & Sunset",
+      "show_sunrise_sunset": "Show dawn & sunset",
       "default_16": "Default 16",
       "hourly_forecast_info": "Hourly Forecast Info",
       "hourly_forecast_info_description": "Configure attributes to be displayed below the hourly forecast when an hour is selected."
@@ -104,7 +104,7 @@
     "selector": {
       "weather_attribute": "Weather Attribute",
       "entity": "Entity",
-      "sun_event": "Next sunrise/sunset"
+      "sun_event": "Next dawn/sunset"
     }
   },
   "card": {

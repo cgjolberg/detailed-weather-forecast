@@ -277,7 +277,12 @@ export class DetailedWeatherForecast extends LitElement {
 
         if (chip.type === 'sun_event') {
           const dawn_entity = typeof chip.dawn_entity === 'string' ? chip.dawn_entity.trim() : '';
-          const dusk_entity = typeof chip.dusk_entity === 'string' ? chip.dusk_entity.trim() : '';
+          const sunset_entity =
+            typeof chip.sunset_entity === 'string'
+              ? chip.sunset_entity.trim()
+              : typeof chip.dusk_entity === 'string'
+                ? chip.dusk_entity.trim()
+                : '';
           const tap_action = typeof chip.tap_action === 'object' && chip.tap_action ? chip.tap_action : undefined;
           const hold_action = typeof chip.hold_action === 'object' && chip.hold_action ? chip.hold_action : undefined;
           const double_tap_action =
@@ -286,11 +291,12 @@ export class DetailedWeatherForecast extends LitElement {
           const sunrise_icon = typeof chip.sunrise_icon === 'string' ? chip.sunrise_icon.trim() : undefined;
           const sunset_icon = typeof chip.sunset_icon === 'string' ? chip.sunset_icon.trim() : undefined;
 
-          if (dawn_entity && dusk_entity) {
+          if (dawn_entity && sunset_entity) {
             normalized.push({
               type: 'sun_event',
               dawn_entity,
-              dusk_entity,
+              sunset_entity,
+              dusk_entity: sunset_entity,
               tap_action,
               hold_action,
               double_tap_action,
@@ -1255,9 +1261,10 @@ export class DetailedWeatherForecast extends LitElement {
       return undefined;
     }
 
+    const sunsetEntity = chip.sunset_entity || chip.dusk_entity;
     const dawn = this._getFutureTimestamp(chip.dawn_entity);
-    const dusk = this._getFutureTimestamp(chip.dusk_entity);
-    const next = [dawn, dusk].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
+    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity) : undefined;
+    const next = [dawn, sunset].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
       (a, b) => a.time - b.time,
     )[0];
 
@@ -1266,7 +1273,7 @@ export class DetailedWeatherForecast extends LitElement {
     }
 
     const isDawn = next.entity === chip.dawn_entity;
-    const label = chip.name || (isDawn ? 'Sunrise' : 'Sunset');
+    const label = chip.name || (isDawn ? 'Dawn' : 'Sunset');
     const icon = isDawn ? chip.sunrise_icon || 'mdi:weather-sunset-up' : chip.sunset_icon || 'mdi:weather-sunset-down';
     const display = formatTime(new Date(next.time), this._hass.locale as any, this._hass.config as any);
 
@@ -1739,19 +1746,19 @@ export class DetailedWeatherForecast extends LitElement {
       return true;
     }
     const times = getTimes(now, coordinates.latitude, coordinates.longitude);
-    const sunrise = times.sunrise?.getTime();
+    const dawn = times.dawn?.getTime();
     const sunset = times.sunset?.getTime();
 
-    if (typeof sunrise !== 'number' || Number.isNaN(sunrise) || typeof sunset !== 'number' || Number.isNaN(sunset)) {
+    if (typeof dawn !== 'number' || Number.isNaN(dawn) || typeof sunset !== 'number' || Number.isNaN(sunset)) {
       return true;
     }
 
     const nowTime = now.getTime();
-    if (sunrise <= sunset) {
-      return nowTime >= sunrise && nowTime < sunset;
+    if (dawn <= sunset) {
+      return nowTime >= dawn && nowTime < sunset;
     }
 
-    return nowTime >= sunrise || nowTime < sunset;
+    return nowTime >= dawn || nowTime < sunset;
   }
 
   private _updateGap() {

@@ -566,23 +566,23 @@ export const getTimeOfDay = (latitude?: number, longitude?: number): TimeOfDay =
     if (typeof getTimes === 'function') {
       const times = getTimes(now, latitude, longitude);
 
-      if (times.sunrise && times.sunset) {
+      if (times.dawn && times.sunset) {
         const currentTime = now.getTime();
-        const sunriseTime = times.sunrise.getTime();
+        const dawnTime = times.dawn.getTime();
         const sunsetTime = times.sunset.getTime();
 
-        // Time ranges with 30-minute transitions for sunrise and sunset
-        const sunriseStart = sunriseTime - 30 * 60 * 1000;
-        const sunriseEnd = sunriseTime + 30 * 60 * 1000;
+        // Time ranges with 30-minute transitions for dawn and sunset
+        const dawnStart = dawnTime - 30 * 60 * 1000;
+        const dawnEnd = dawnTime + 30 * 60 * 1000;
         const sunsetStart = sunsetTime - 30 * 60 * 1000;
         const sunsetEnd = sunsetTime + 30 * 60 * 1000;
 
-        if (currentTime >= sunriseStart && currentTime < sunriseEnd) {
-          return { type: 'sunrise', progress: (currentTime - sunriseStart) / (60 * 60 * 1000) };
+        if (currentTime >= dawnStart && currentTime < dawnEnd) {
+          return { type: 'sunrise', progress: (currentTime - dawnStart) / (60 * 60 * 1000) };
         }
 
-        if (currentTime >= sunriseEnd && currentTime < sunsetStart) {
-          return { type: 'day', progress: (currentTime - sunriseEnd) / (sunsetStart - sunriseEnd) };
+        if (currentTime >= dawnEnd && currentTime < sunsetStart) {
+          return { type: 'day', progress: (currentTime - dawnEnd) / (sunsetStart - dawnEnd) };
         }
 
         if (currentTime >= sunsetStart && currentTime < sunsetEnd) {

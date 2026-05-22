@@ -6,7 +6,7 @@ A Lovelace weather forecast card for Home Assistant
 
 ## Overview
 
-Detailed Weather Forecast is a Lovelace custom weather forecast card for Home Assistant that combines a large weather header with interactive daily and hourly forecasts. The card displays the forecast from the selected `weather` entity, and adds visual context such as sunrise and sunset markers, precipitation values, and day or night specific animations.
+Detailed Weather Forecast is a Lovelace custom weather forecast card for Home Assistant that combines a large weather header with interactive daily and hourly forecasts. The card displays the forecast from the selected `weather` entity, and adds visual context such as dawn and sunset markers, precipitation values, and day or night specific animations.
 
 This card is a further development of the [Weather Forecast Extended Card](https://github.com/Thyraz/weather-forecast-extended) and was also inspired by the [Weather Forecast Card](https://github.com/troinine/ha-weather-forecast-card). The main requirement for this card was a compact view, which nevertheless gives you the opportunity to see all available information about the current weather and the weather forecast via interaction.
 
@@ -18,7 +18,7 @@ This card is a further development of the [Weather Forecast Extended Card](https
 - Visual highlighting of precipitation amounts and probabilities.
 - Expandable detail views for the current weather, as well as daily and hourly forecast items.
 - Support to display a configurable extra attribute (e.g., wind speed, UV index) as a third row in the daily and hourly forecast.
-- Optional sunrise and sunset times embedded in the hourly forecast, using either the Home Assistant location or custom coordinates for sun calculations.
+- Optional dawn and sunset times embedded in the hourly forecast, using either the Home Assistant location or custom coordinates for sun calculations.
 - Support to display daily / hourly solar forecast.
 - Optional minute-level nowcast precipitation chart via `get_minute_forecast` actions (OpenWeatherMap, DWD nowcast).
 - Configurable header chips that can display weather entity attributes or other entities in the header.
@@ -113,7 +113,7 @@ hourly_extra_attribute:
 | `hourly_min_gap`               | number           | `16`                                    | Minimum gap in pixels between hourly forecast items. Must be `≥ 10`.                                                                                                                   |
 | `daily_icon_size`              | number           | `60`                                    | Size of the weather icons in the daily forecast in pixels. Must be `≥ 20`.                                                                                                             |
 | `hourly_icon_size`             | number           | `60`                                    | Size of the weather icons in the hourly forecast in pixels. Must be `≥ 20`.                                                                                                            |
-| `show_sun_times`               | boolean          | `false`                                 | Adds sunrise and sunset markers to the hourly forecast. Requires valid coordinates.                                                                                                    |
+| `show_sun_times`               | boolean          | `false`                                 | Adds dawn and sunset markers to the hourly forecast. Requires valid coordinates.                                                                                                       |
 | `sun_use_home_coordinates`     | boolean          | `true`                                  | Uses Home Assistant's home location for sun calculations when `show_sun_times` is enabled. Set to `false` to provide manual coordinates.                                               |
 | `sun_latitude`                 | number \| string | Home Assistant latitude                 | Latitude used when `sun_use_home_coordinates` is `false`. Accepts decimal degrees as string or number.                                                                                 |
 | `sun_longitude`                | number \| string | Home Assistant longitude                | Longitude used when `sun_use_home_coordinates` is `false`. Accepts decimal degrees as string or number.                                                                                |
@@ -128,7 +128,7 @@ hourly_extra_attribute:
 | `temp_font_size`               | number \| string | theme default                           | Optional font size for the header temperature text, e.g. `56`, `56px`, or `3rem`.                                                                                                     |
 | `hourly_extra_attribute`       | object           | none                                    | Optional third text line under the hourly precipitation rows. Includes `attribute`, `unit`, `divisor`, `color`, and `dim_below`.                                                       |
 | `daily_extra_attribute`        | object           | none                                    | Optional third text line under the daily precipitation rows. Includes `attribute`, `unit`, `divisor`, `color`, and `dim_below`.                                                        |
-| `header_chips`                 | array            | `[]`                                    | Up to four chip definitions shown in the header. Each chip can display an entity attribute, another entity's state, or the next dawn/dusk event and may include its own actions.       |
+| `header_chips`                 | array            | `[]`                                    | Up to four chip definitions shown in the header. Each chip can display an entity attribute, another entity's state, or the next dawn/sunset event and may include its own actions.     |
 | `header_info`                  | array            | `[]`                                    | A list of attribute objects to show in the expandable detail view for the current weather conditions.                                                                                  |
 | `daily_info`                   | array            | `[]`                                    | A list of attribute objects to show in the expandable detail view for each daily forecast item.                                                                                        |
 | `hourly_info`                  | array            | `[]`                                    | A list of attribute objects to show in the expandable detail view for each hourly forecast item.                                                                                       |
@@ -150,6 +150,7 @@ Both options support two modes (`type`):
 
 - `attribute`: Displays an attribute from the configured weather entity. Accepts `attribute`, `name`, `icon`, `unit`, and `divisor`.
 - `entity`: Displays the state of any other Home Assistant entity. Accepts `entity`, `name`, and `icon`.
+- `sun_event`: Displays the next dawn or sunset event. Accepts `dawn_entity`, `sunset_entity`, `name`, `sunrise_icon`, and `sunset_icon`. The older `dusk_entity` key is still accepted as a compatibility alias for `sunset_entity`.
 
 In addition, `header_chips` support interaction options: `tap_action`, `hold_action`, and `double_tap_action`.
 

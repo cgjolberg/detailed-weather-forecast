@@ -99,7 +99,7 @@ export interface SunCoordinates {
   longitude: number;
 }
 
-export type SunEventType = 'sunrise' | 'sunset';
+export type SunEventType = 'dawn' | 'sunrise' | 'sunset';
 
 export type SunTimesByDay = Record<string, Partial<Record<SunEventType, number>>>;
 
@@ -130,7 +130,8 @@ export interface HeaderEntity extends HeaderActionConfig {
 export interface HeaderSunEvent extends HeaderActionConfig {
   type: 'sun_event';
   dawn_entity: string;
-  dusk_entity: string;
+  sunset_entity?: string;
+  dusk_entity?: string;
   name?: string;
   sunrise_icon?: string;
   sunset_icon?: string;

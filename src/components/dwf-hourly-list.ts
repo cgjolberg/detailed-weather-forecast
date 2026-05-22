@@ -411,21 +411,21 @@ export class DWFHourlyList extends LitElement {
 
       const baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       let times = getTimes(baseDate, latitude, longitude);
-      let sunrise = this._toTimestamp(times.sunrise);
+      let dawn = this._toTimestamp(times.dawn);
       let sunset = this._toTimestamp(times.sunset);
       // Keep rendered day aligned with the calendar day of the forecast even if
       // user and forecast locations sit in very different time zones.
-      const dayShift = this._determineDayShift(key, sunrise, sunset);
+      const dayShift = this._determineDayShift(key, dawn, sunset);
       if (dayShift !== 0) {
         const shiftedDate = new Date(baseDate);
         shiftedDate.setDate(shiftedDate.getDate() + dayShift);
         times = getTimes(shiftedDate, latitude, longitude);
-        sunrise = this._toTimestamp(times.sunrise);
+        dawn = this._toTimestamp(times.dawn);
         sunset = this._toTimestamp(times.sunset);
       }
       sunTimes[key] = {};
-      if (sunrise !== undefined) {
-        sunTimes[key].sunrise = sunrise;
+      if (dawn !== undefined) {
+        sunTimes[key].dawn = dawn;
       }
       if (sunset !== undefined) {
         sunTimes[key].sunset = sunset;
@@ -449,7 +449,7 @@ export class DWFHourlyList extends LitElement {
 
   private _isNightFromSunTimes(date: Date): boolean | undefined {
     const times = this._sunTimesByDay?.[this._formatDayKey(date)];
-    if (!times || times.sunrise === undefined || times.sunset === undefined) {
+    if (!times || times.dawn === undefined || times.sunset === undefined) {
       return undefined;
     }
 
@@ -458,11 +458,11 @@ export class DWFHourlyList extends LitElement {
       return undefined;
     }
 
-    if (times.sunrise <= times.sunset) {
-      return timestamp < times.sunrise || timestamp >= times.sunset;
+    if (times.dawn <= times.sunset) {
+      return timestamp < times.dawn || timestamp >= times.sunset;
     }
 
-    return !(timestamp >= times.sunrise && timestamp < times.sunset);
+    return !(timestamp >= times.dawn && timestamp < times.sunset);
   }
 
   private _getSunEventForHour(date: Date, index: number): { type: SunEventType; timestamp: number } | undefined {
@@ -482,8 +482,8 @@ export class DWFHourlyList extends LitElement {
     }
     const end = this._getIntervalEnd(index, start);
 
-    if (times.sunrise !== undefined && times.sunrise >= start && times.sunrise < end) {
-      return { type: 'sunrise', timestamp: times.sunrise };
+    if (times.dawn !== undefined && times.dawn >= start && times.dawn < end) {
+      return { type: 'dawn', timestamp: times.dawn };
     }
 
     if (times.sunset !== undefined && times.sunset >= start && times.sunset < end) {
@@ -521,8 +521,8 @@ export class DWFHourlyList extends LitElement {
     return Number.isFinite(time) ? time : undefined;
   }
 
-  private _determineDayShift(targetKey: string, sunrise?: number, sunset?: number): number {
-    // Returns +1/-1 when sunrise/sunset fall on the previous/next day once
+  private _determineDayShift(targetKey: string, dawn?: number, sunset?: number): number {
+    // Returns +1/-1 when dawn/sunset fall on the previous/next day once
     // rendered in the user's local time zone. That happens when the forecast
     // location is many hours away from the viewer.
     const evaluate = (timestamp?: number): number => {
@@ -536,9 +536,9 @@ export class DWFHourlyList extends LitElement {
       return eventKey < targetKey ? 1 : -1;
     };
 
-    const sunriseShift = evaluate(sunrise);
-    if (sunriseShift !== 0) {
-      return sunriseShift;
+    const dawnShift = evaluate(dawn);
+    if (dawnShift !== 0) {
+      return dawnShift;
     }
 
     return evaluate(sunset);

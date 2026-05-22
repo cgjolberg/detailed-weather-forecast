@@ -56,7 +56,7 @@ const computeSchema = memoizeOne(
       schema.push({ name: 'entity', selector: { entity: {} } });
     } else if (type === 'sun_event') {
       schema.push({ name: 'dawn_entity', selector: { entity: {} } });
-      schema.push({ name: 'dusk_entity', selector: { entity: {} } });
+      schema.push({ name: 'sunset_entity', selector: { entity: {} } });
     } else {
       // attribute
       schema.push({

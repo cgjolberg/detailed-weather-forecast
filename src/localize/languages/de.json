@@ -61,7 +61,7 @@
     },
     "section": {
       "gps_coordinates": "GPS-Koordinaten",
-      "gps_coordinates_description": "Wird für Sonnenaufgangs-/Sonnenuntergangsmarkierungen und Tag-/Nachthintergründe benötigt",
+      "gps_coordinates_description": "Wird für Morgendämmerungs-/Sonnenuntergangsmarkierungen und Tag-/Nachthintergründe benötigt",
       "use_home_assistant_location": "Home Assistant-Standort verwenden",
       "latitude": "Breitengrad",
       "longitude": "Längengrad",
@@ -91,8 +91,8 @@
       "daily_forecast_info": "Tägliche Vorhersage-Info",
       "daily_forecast_info_description": "Attribute konfigurieren, die unterhalb der täglichen Vorhersage angezeigt werden sollen, wenn ein Tag ausgewählt wurde.",
       "hourly_forecast": "Stündliche Vorhersage",
-      "sunrise_sunset": "Sonnenaufgang & Sonnenuntergang",
-      "show_sunrise_sunset": "Sonnenaufgang & Sonnenuntergang anzeigen",
+      "sunrise_sunset": "Morgendämmerung & Sonnenuntergang",
+      "show_sunrise_sunset": "Morgendämmerung & Sonnenuntergang anzeigen",
       "default_16": "Standard 16",
       "hourly_forecast_info": "Stündliche Vorhersage-Info",
       "hourly_forecast_info_description": "Attribute konfigurieren, die unterhalb der stündlichen Vorhersage angezeigt werden sollen, wenn eine Stunde ausgewählt wurde."
@@ -103,7 +103,7 @@
     },
     "selector": {
       "weather_attribute": "Wetter-Attribut",
-      "sun_event": "Naechster Sonnenauf-/untergang",
+      "sun_event": "Naechste Morgendaemmerung/Sonnenuntergang",
       "entity": "Entität"
     }
   },
