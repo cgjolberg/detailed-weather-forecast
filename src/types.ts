@@ -53,6 +53,7 @@ export interface DetailedWeatherForecastConfig extends LovelaceCardConfig {
   hourly_icon_size?: number;
   header_temperature?: HeaderTemperatureConfig;
   header_condition?: HeaderConditionConfig;
+  header_condition_font_size?: number | string;
   hourly_extra_attribute?: ExtraForecastAttributeConfig;
   daily_extra_attribute?: ExtraForecastAttributeConfig;
   solar_forecast_entries?: string[];
