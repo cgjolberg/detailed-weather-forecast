@@ -216,6 +216,7 @@
 .weather .condition {
   font-size: var(--dwf-header-condition-font-size, var(--ha-font-size-xl));
   line-height: calc(10px + var(--dwf-header-condition-font-size, var(--ha-font-size-xl)));
+  font-weight: var(--ha-font-weight-bold, bold);
   /* background-color: rgba(0, 0, 0, 0.3); */
   padding: var(--ha-space-1, 4px) var(--ha-space-4, 16px);
   /* border-radius: 25px; */
@@ -240,8 +241,8 @@
 }
 
 .weather .temp {
-  font-size: var(--ha-font-size-5xl);
-  line-height: calc(10px + var(--ha-font-size-xl));
+  font-size: var(--dwf-header-temp-font-size, var(--ha-font-size-5xl));
+  line-height: calc(10px + var(--dwf-header-temp-font-size, var(--ha-font-size-xl)));
   font-weight: var(--ha-font-weight-bold, bold);
   /* background-color: rgba(0, 0, 0, 0.3); */
   padding: 2px var(--ha-space-4, 16px);
