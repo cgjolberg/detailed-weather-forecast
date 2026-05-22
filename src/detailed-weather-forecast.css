@@ -262,6 +262,10 @@
   white-space: normal;
 }
 
+.weather .condition .header-pill-text {
+  white-space: nowrap;
+}
+
 .weather .nowcast-panel {
   /* background: rgba(0, 0, 0, 0.3); */
   /* border-radius: 16px; */
