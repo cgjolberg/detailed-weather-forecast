@@ -277,12 +277,19 @@ export class DetailedWeatherForecast extends LitElement {
 
         if (chip.type === 'sun_event') {
           const dawn_entity = typeof chip.dawn_entity === 'string' ? chip.dawn_entity.trim() : '';
+          const dawn_attribute = typeof chip.dawn_attribute === 'string' ? chip.dawn_attribute.trim() : undefined;
           const sunset_entity =
             typeof chip.sunset_entity === 'string'
               ? chip.sunset_entity.trim()
               : typeof chip.dusk_entity === 'string'
                 ? chip.dusk_entity.trim()
                 : '';
+          const sunset_attribute =
+            typeof chip.sunset_attribute === 'string'
+              ? chip.sunset_attribute.trim()
+              : typeof chip.dusk_attribute === 'string'
+                ? chip.dusk_attribute.trim()
+                : undefined;
           const tap_action = typeof chip.tap_action === 'object' && chip.tap_action ? chip.tap_action : undefined;
           const hold_action = typeof chip.hold_action === 'object' && chip.hold_action ? chip.hold_action : undefined;
           const double_tap_action =
@@ -295,8 +302,11 @@ export class DetailedWeatherForecast extends LitElement {
             normalized.push({
               type: 'sun_event',
               dawn_entity,
+              dawn_attribute,
               sunset_entity,
+              sunset_attribute,
               dusk_entity: sunset_entity,
+              dusk_attribute: sunset_attribute,
               tap_action,
               hold_action,
               double_tap_action,
@@ -1262,8 +1272,9 @@ export class DetailedWeatherForecast extends LitElement {
     }
 
     const sunsetEntity = chip.sunset_entity || chip.dusk_entity;
-    const dawn = this._getFutureTimestamp(chip.dawn_entity);
-    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity) : undefined;
+    const sunsetAttribute = chip.sunset_attribute || chip.dusk_attribute;
+    const dawn = this._getFutureTimestamp(chip.dawn_entity, chip.dawn_attribute, 'dawn');
+    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity, sunsetAttribute, 'sunset') : undefined;
     const next = [dawn, sunset].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
       (a, b) => a.time - b.time,
     )[0];
@@ -1272,7 +1283,7 @@ export class DetailedWeatherForecast extends LitElement {
       return undefined;
     }
 
-    const isDawn = next.entity === chip.dawn_entity;
+    const isDawn = next.type === 'dawn';
     const label = chip.name || (isDawn ? 'Dawn' : 'Sunset');
     const icon = isDawn ? chip.sunrise_icon || 'mdi:weather-sunset-up' : chip.sunset_icon || 'mdi:weather-sunset-down';
     const display = formatTime(new Date(next.time), this._hass.locale as any, this._hass.config as any);
@@ -1280,19 +1291,24 @@ export class DetailedWeatherForecast extends LitElement {
     return { label, display, icon, entity: next.entity };
   }
 
-  private _getFutureTimestamp(entity: string): { entity: string; time: number } | undefined {
+  private _getFutureTimestamp(
+    entity: string,
+    attribute: string | undefined,
+    type: 'dawn' | 'sunset',
+  ): { entity: string; time: number; type: 'dawn' | 'sunset' } | undefined {
     const state = this._hass?.states[entity];
     if (!state) {
       return undefined;
     }
 
-    const time = new Date(state.state).getTime();
+    const rawValue = attribute ? state.attributes?.[attribute] : state.state;
+    const time = new Date(String(rawValue ?? '')).getTime();
     if (!Number.isFinite(time)) {
       return undefined;
     }
 
     const now = Date.now();
-    return time >= now - 60 * 1000 ? { entity, time } : undefined;
+    return time >= now - 60 * 1000 ? { entity, time, type } : undefined;
   }
 
   private _formatHeaderEntity(entity: string): {

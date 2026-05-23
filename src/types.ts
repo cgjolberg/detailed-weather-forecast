@@ -130,8 +130,11 @@ export interface HeaderEntity extends HeaderActionConfig {
 export interface HeaderSunEvent extends HeaderActionConfig {
   type: 'sun_event';
   dawn_entity: string;
+  dawn_attribute?: string;
   sunset_entity?: string;
+  sunset_attribute?: string;
   dusk_entity?: string;
+  dusk_attribute?: string;
   name?: string;
   sunrise_icon?: string;
   sunset_icon?: string;

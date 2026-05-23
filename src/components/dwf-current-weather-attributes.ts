@@ -177,8 +177,9 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     }
 
     const sunsetEntity = attrConfig.sunset_entity || attrConfig.dusk_entity;
-    const dawn = this._getFutureTimestamp(attrConfig.dawn_entity);
-    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity) : undefined;
+    const sunsetAttribute = attrConfig.sunset_attribute || attrConfig.dusk_attribute;
+    const dawn = this._getFutureTimestamp(attrConfig.dawn_entity, attrConfig.dawn_attribute, 'dawn');
+    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity, sunsetAttribute, 'sunset') : undefined;
     const next = [dawn, sunset].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
       (a, b) => a.time - b.time,
     )[0];
@@ -187,7 +188,7 @@ export class DwfCurrentWeatherAttributes extends LitElement {
       return undefined;
     }
 
-    const isDawn = next.entity === attrConfig.dawn_entity;
+    const isDawn = next.type === 'dawn';
     const label = attrConfig.name || (isDawn ? 'Dawn' : 'Sunset');
     const icon = isDawn
       ? attrConfig.sunrise_icon || 'mdi:weather-sunset-up'
@@ -197,18 +198,23 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     return { label, display, icon, entity: next.entity };
   }
 
-  private _getFutureTimestamp(entity: string): { entity: string; time: number } | undefined {
+  private _getFutureTimestamp(
+    entity: string,
+    attribute: string | undefined,
+    type: 'dawn' | 'sunset',
+  ): { entity: string; time: number; type: 'dawn' | 'sunset' } | undefined {
     const state = this.hass?.states[entity];
     if (!state) {
       return undefined;
     }
 
-    const time = new Date(state.state).getTime();
+    const rawValue = attribute ? state.attributes?.[attribute] : state.state;
+    const time = new Date(String(rawValue ?? '')).getTime();
     if (!Number.isFinite(time)) {
       return undefined;
     }
 
-    return time >= Date.now() - 60 * 1000 ? { entity, time } : undefined;
+    return time >= Date.now() - 60 * 1000 ? { entity, time, type } : undefined;
   }
 }
 
