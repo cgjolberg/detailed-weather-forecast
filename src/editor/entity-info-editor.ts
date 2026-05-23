@@ -55,10 +55,8 @@ const computeSchema = memoizeOne(
     if (type === 'entity') {
       schema.push({ name: 'entity', selector: { entity: {} } });
     } else if (type === 'sun_event') {
-      schema.push({ name: 'dawn_entity', selector: { entity: {} } });
-      schema.push({ name: 'dawn_attribute', selector: { text: {} }, optional: true });
-      schema.push({ name: 'dusk_entity', selector: { entity: {} } });
-      schema.push({ name: 'dusk_attribute', selector: { text: {} }, optional: true });
+      schema.push({ name: 'sunrise_icon', selector: { icon: {} }, optional: true });
+      schema.push({ name: 'sunset_icon', selector: { icon: {} }, optional: true });
     } else {
       // attribute
       schema.push({
@@ -72,7 +70,9 @@ const computeSchema = memoizeOne(
     }
 
     schema.push({ name: 'name', selector: { text: {} } });
-    schema.push({ name: 'icon', selector: { icon: {} } });
+    if (type !== 'sun_event') {
+      schema.push({ name: 'icon', selector: { icon: {} } });
+    }
 
     if (type === 'attribute') {
       schema.push({ name: 'unit', selector: { text: {} } });

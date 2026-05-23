@@ -6,8 +6,8 @@ import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { actionHandler } from '../action-handler-directive';
 import { formatTime } from '../date-time';
-import { HeaderAttribute, WeatherEntity } from '../types';
-import { executeAction, ExtendedHomeAssistant, formatWeatherAttribute } from '../weather';
+import type { HeaderAttribute, SunCoordinates, WeatherEntity } from '../types';
+import { executeAction, ExtendedHomeAssistant, formatWeatherAttribute, getNextSunEvent } from '../weather';
 
 @customElement('dwf-current-weather-attributes')
 export class DwfCurrentWeatherAttributes extends LitElement {
@@ -16,6 +16,8 @@ export class DwfCurrentWeatherAttributes extends LitElement {
   @property({ attribute: false }) weatherEntity!: WeatherEntity;
 
   @property({ attribute: false }) attributeConfigs: HeaderAttribute[] = [];
+
+  @property({ attribute: false }) sunCoordinates?: SunCoordinates;
 
   protected createRenderRoot() {
     return this;
@@ -50,7 +52,6 @@ export class DwfCurrentWeatherAttributes extends LitElement {
       if (!sunEvent) {
         return nothing;
       }
-      stateObj = this.hass.states[sunEvent.entity];
       value = sunEvent.display;
       icon = sunEvent.icon;
       name = sunEvent.label;
@@ -98,9 +99,7 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     const actionEntity =
       attrConfig.type === 'entity' && attrConfig.entity
         ? attrConfig.entity
-        : attrConfig.type === 'sun_event' && stateObj
-          ? stateObj.entity_id
-          : undefined;
+        : undefined;
     const hasTapAction = Boolean(actionEntity) || hasAction(attrConfig.tap_action);
     const hasHoldAction = Boolean(actionEntity) || hasAction(attrConfig.hold_action);
     const hasDoubleTapAction = hasAction(attrConfig.double_tap_action);
@@ -126,7 +125,9 @@ export class DwfCurrentWeatherAttributes extends LitElement {
         ${hasAnyAction ? html`<mwc-ripple></mwc-ripple>` : nothing}
         ${entityPicture
           ? html`<img class="dwf-current-attribute-icon entity-picture-icon" src=${entityPicture} alt=${name || ''} />`
-          : isEntity || attrConfig.type === 'sun_event'
+          : attrConfig.type === 'sun_event'
+            ? html`<ha-icon class="dwf-current-attribute-icon" .icon=${icon}></ha-icon>`
+            : isEntity
             ? html`<ha-state-icon
                 class="dwf-current-attribute-icon"
                 .hass=${this.hass}
@@ -158,9 +159,7 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     const entityFallback =
       attrConfig.type === 'entity' && attrConfig.entity
         ? attrConfig.entity
-        : attrConfig.type === 'sun_event'
-          ? this._formatSunEvent(attrConfig)?.entity || this.weatherEntity.entity_id
-          : this.weatherEntity.entity_id;
+        : this.weatherEntity.entity_id;
     executeAction(this, this.hass, actionConfig, entityFallback, action);
   }
 
@@ -169,20 +168,13 @@ export class DwfCurrentWeatherAttributes extends LitElement {
         label: string;
         display: string;
         icon: string;
-        entity: string;
       }
     | undefined {
     if (attrConfig.type !== 'sun_event') {
       return undefined;
     }
 
-    const sunsetEntity = attrConfig.sunset_entity || attrConfig.dusk_entity;
-    const sunsetAttribute = attrConfig.sunset_attribute || attrConfig.dusk_attribute;
-    const dawn = this._getFutureTimestamp(attrConfig.dawn_entity, attrConfig.dawn_attribute, 'dawn');
-    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity, sunsetAttribute, 'sunset') : undefined;
-    const next = [dawn, sunset].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
-      (a, b) => a.time - b.time,
-    )[0];
+    const next = getNextSunEvent(this.sunCoordinates);
 
     if (!next) {
       return undefined;
@@ -193,28 +185,9 @@ export class DwfCurrentWeatherAttributes extends LitElement {
     const icon = isDawn
       ? attrConfig.sunrise_icon || 'mdi:weather-sunset-up'
       : attrConfig.sunset_icon || 'mdi:weather-sunset-down';
-    const display = formatTime(new Date(next.time), this.hass.locale as any, this.hass.config as any);
+    const display = formatTime(new Date(next.timestamp), this.hass.locale as any, this.hass.config as any);
 
-    return { label, display, icon, entity: next.entity };
-  }
-
-  private _getFutureTimestamp(
-    entity: string,
-    attribute: string | undefined,
-    type: 'dawn' | 'sunset',
-  ): { entity: string; time: number; type: 'dawn' | 'sunset' } | undefined {
-    const state = this.hass?.states[entity];
-    if (!state) {
-      return undefined;
-    }
-
-    const rawValue = attribute ? state.attributes?.[attribute] : state.state;
-    const time = new Date(String(rawValue ?? '')).getTime();
-    if (!Number.isFinite(time)) {
-      return undefined;
-    }
-
-    return time >= Date.now() - 60 * 1000 ? { entity, time, type } : undefined;
+    return { label, display, icon };
   }
 }
 

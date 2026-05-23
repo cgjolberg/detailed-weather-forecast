@@ -4,7 +4,6 @@ import type { PropertyValues } from 'lit';
 import { html, LitElement, nothing } from 'lit';
 import { state } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import * as SunCalc from 'suncalc';
 import { formatTime } from './date-time';
 import './components/dwf-current-weather-attributes';
 import './components/dwf-daily-list';
@@ -30,7 +29,14 @@ import {
 import { AnimationManager } from './animations/animation-manager';
 import { enableMomentumScroll } from './utils/momentum-scroll';
 import type { ExtendedHomeAssistant, ModernForecastType } from './weather';
-import { formatWeatherAttribute, getSupportedForecastTypes, subscribeForecast, getTimeOfDay } from './weather';
+import {
+  formatWeatherAttribute,
+  getNextSunEvent,
+  getSupportedForecastTypes,
+  getSunTimes,
+  subscribeForecast,
+  getTimeOfDay,
+} from './weather';
 
 // Styled console banner so your card is easy to spot in the browser console.
 // Stays visible in production — useful for version-mismatch debugging in HA.
@@ -276,20 +282,6 @@ export class DetailedWeatherForecast extends LitElement {
         }
 
         if (chip.type === 'sun_event') {
-          const dawn_entity = typeof chip.dawn_entity === 'string' ? chip.dawn_entity.trim() : '';
-          const dawn_attribute = typeof chip.dawn_attribute === 'string' ? chip.dawn_attribute.trim() : undefined;
-          const sunset_entity =
-            typeof chip.sunset_entity === 'string'
-              ? chip.sunset_entity.trim()
-              : typeof chip.dusk_entity === 'string'
-                ? chip.dusk_entity.trim()
-                : '';
-          const sunset_attribute =
-            typeof chip.sunset_attribute === 'string'
-              ? chip.sunset_attribute.trim()
-              : typeof chip.dusk_attribute === 'string'
-                ? chip.dusk_attribute.trim()
-                : undefined;
           const tap_action = typeof chip.tap_action === 'object' && chip.tap_action ? chip.tap_action : undefined;
           const hold_action = typeof chip.hold_action === 'object' && chip.hold_action ? chip.hold_action : undefined;
           const double_tap_action =
@@ -298,23 +290,15 @@ export class DetailedWeatherForecast extends LitElement {
           const sunrise_icon = typeof chip.sunrise_icon === 'string' ? chip.sunrise_icon.trim() : undefined;
           const sunset_icon = typeof chip.sunset_icon === 'string' ? chip.sunset_icon.trim() : undefined;
 
-          if (dawn_entity && sunset_entity) {
-            normalized.push({
-              type: 'sun_event',
-              dawn_entity,
-              dawn_attribute,
-              sunset_entity,
-              sunset_attribute,
-              dusk_entity: sunset_entity,
-              dusk_attribute: sunset_attribute,
-              tap_action,
-              hold_action,
-              double_tap_action,
-              name,
-              sunrise_icon,
-              sunset_icon,
-            });
-          }
+          normalized.push({
+            type: 'sun_event',
+            tap_action,
+            hold_action,
+            double_tap_action,
+            name,
+            sunrise_icon,
+            sunset_icon,
+          });
         }
       }
     }
@@ -834,6 +818,7 @@ export class DetailedWeatherForecast extends LitElement {
                 .nowcastPanelTemplate=${showInlineNowcast ? nowcastPanelTemplate : undefined}
                 .headerTemperature=${headerTemperature}
                 .isDaytime=${this._isDaytimeNow()}
+                .sunCoordinates=${sunCoordinates}
                 .headerChipsDisplays=${headerChips}
                 .headerOnly=${headerOnly}
                 .headerStyles=${headerStyles}
@@ -1189,7 +1174,6 @@ export class DetailedWeatherForecast extends LitElement {
           hold_action,
           double_tap_action,
           icon: formatted.icon,
-          entity: formatted.entity,
         });
         return;
       }
@@ -1265,19 +1249,12 @@ export class DetailedWeatherForecast extends LitElement {
     label: string;
     display: string;
     icon: string;
-    entity: string;
   } | undefined {
     if (chip.type !== 'sun_event' || !this._hass) {
       return undefined;
     }
 
-    const sunsetEntity = chip.sunset_entity || chip.dusk_entity;
-    const sunsetAttribute = chip.sunset_attribute || chip.dusk_attribute;
-    const dawn = this._getFutureTimestamp(chip.dawn_entity, chip.dawn_attribute, 'dawn');
-    const sunset = sunsetEntity ? this._getFutureTimestamp(sunsetEntity, sunsetAttribute, 'sunset') : undefined;
-    const next = [dawn, sunset].filter((event): event is NonNullable<typeof event> => Boolean(event)).sort(
-      (a, b) => a.time - b.time,
-    )[0];
+    const next = getNextSunEvent(this._getLocationCoordinates());
 
     if (!next) {
       return undefined;
@@ -1286,29 +1263,9 @@ export class DetailedWeatherForecast extends LitElement {
     const isDawn = next.type === 'dawn';
     const label = chip.name || (isDawn ? 'Dawn' : 'Sunset');
     const icon = isDawn ? chip.sunrise_icon || 'mdi:weather-sunset-up' : chip.sunset_icon || 'mdi:weather-sunset-down';
-    const display = formatTime(new Date(next.time), this._hass.locale as any, this._hass.config as any);
+    const display = formatTime(new Date(next.timestamp), this._hass.locale as any, this._hass.config as any);
 
-    return { label, display, icon, entity: next.entity };
-  }
-
-  private _getFutureTimestamp(
-    entity: string,
-    attribute: string | undefined,
-    type: 'dawn' | 'sunset',
-  ): { entity: string; time: number; type: 'dawn' | 'sunset' } | undefined {
-    const state = this._hass?.states[entity];
-    if (!state) {
-      return undefined;
-    }
-
-    const rawValue = attribute ? state.attributes?.[attribute] : state.state;
-    const time = new Date(String(rawValue ?? '')).getTime();
-    if (!Number.isFinite(time)) {
-      return undefined;
-    }
-
-    const now = Date.now();
-    return time >= now - 60 * 1000 ? { entity, time, type } : undefined;
+    return { label, display, icon };
   }
 
   private _formatHeaderEntity(entity: string): {
@@ -1756,14 +1713,9 @@ export class DetailedWeatherForecast extends LitElement {
     }
 
     const now = new Date();
-    const getTimes = SunCalc.getTimes || (SunCalc as any).default?.getTimes;
-    if (typeof getTimes !== 'function') {
-      console.warn('SunCalc.getTimes is not available.');
-      return true;
-    }
-    const times = getTimes(now, coordinates.latitude, coordinates.longitude);
-    const dawn = times.dawn?.getTime();
-    const sunset = times.sunset?.getTime();
+    const times = getSunTimes(now, coordinates);
+    const dawn = times?.dawn;
+    const sunset = times?.sunset;
 
     if (typeof dawn !== 'number' || Number.isNaN(dawn) || typeof sunset !== 'number' || Number.isNaN(sunset)) {
       return true;

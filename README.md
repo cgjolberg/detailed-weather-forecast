@@ -150,7 +150,7 @@ Both options support two modes (`type`):
 
 - `attribute`: Displays an attribute from the configured weather entity. Accepts `attribute`, `name`, `icon`, `unit`, and `divisor`.
 - `entity`: Displays the state of any other Home Assistant entity. Accepts `entity`, `name`, and `icon`.
-- `sun_event`: Displays the next dawn or sunset event. Accepts `dawn_entity`, `dusk_entity`, optional `dawn_attribute`/`dusk_attribute`, `name`, `sunrise_icon`, and `sunset_icon`. Use `dusk_entity` for the sunset source; the key name is kept for compatibility.
+- `sun_event`: Displays the next calculated dawn or sunset event using the same coordinates as the hourly sun markers. Accepts `name`, `sunrise_icon`, and `sunset_icon`.
 
 In addition, `header_chips` support interaction options: `tap_action`, `hold_action`, and `double_tap_action`.
 

@@ -7,7 +7,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { actionHandler } from '../action-handler-directive';
 import * as customStyles from '../detailed-weather-forecast.css';
-import type { DetailedWeatherForecastConfig, WeatherEntity, HeaderChipDisplay } from '../types';
+import type { DetailedWeatherForecastConfig, WeatherEntity, HeaderChipDisplay, SunCoordinates } from '../types';
 import type { ExtendedHomeAssistant } from '../weather';
 import { getCurrentWeatherStateIcon, executeAction } from '../weather';
 
@@ -33,6 +33,9 @@ export class DwfHeader extends LitElement {
 
   @property({ type: Boolean })
   public isDaytime?: boolean;
+
+  @property({ attribute: false })
+  public sunCoordinates?: SunCoordinates;
 
   @property({ attribute: false })
   public headerChipsDisplays: HeaderChipDisplay[] = [];
@@ -134,10 +137,11 @@ export class DwfHeader extends LitElement {
           ></dwf-header-chips>`
         : !compactChips && (this.config.header_chips?.length ?? 0) > 0
           ? html`<dwf-current-weather-attributes
-              .hass=${this.hass}
-              .weatherEntity=${this.weatherEntity}
-              .attributeConfigs=${this.config.header_chips ?? []}
-            ></dwf-current-weather-attributes>`
+            .hass=${this.hass}
+            .weatherEntity=${this.weatherEntity}
+            .attributeConfigs=${this.config.header_chips ?? []}
+            .sunCoordinates=${this.sunCoordinates}
+          ></dwf-current-weather-attributes>`
           : nothing;
 
     const headerClasses = showBackground

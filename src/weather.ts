@@ -10,6 +10,8 @@ import type {
   ForecastAttribute,
   ForecastEvent,
   DisplayAttribute,
+  SunCoordinates,
+  SunEventType,
   TimeOfDay,
   WeatherEntity,
 } from './types';
@@ -24,6 +26,15 @@ export const enum WeatherEntityFeature {
 export type ModernForecastType = 'hourly' | 'daily' | 'twice_daily';
 
 export type ForecastType = ModernForecastType | 'legacy';
+
+export type CalculatedSunEventType = Extract<SunEventType, 'dawn' | 'sunset'>;
+
+export type CalculatedSunTimes = Partial<Record<CalculatedSunEventType, number>>;
+
+export type CalculatedSunEvent = {
+  type: CalculatedSunEventType;
+  timestamp: number;
+};
 
 // Add missing functions to "HomeAssistant" that aren't provided from custom-card-helpers
 export type ExtendedHomeAssistant = HomeAssistant & {
@@ -550,6 +561,71 @@ const getLocalizationKey = memoizeOne((attribute: string): string => {
   }
 });
 
+const getSunCalcTimes = (date: Date, latitude: number, longitude: number): any | undefined => {
+  const getTimes = SunCalc.getTimes || (SunCalc as any).default?.getTimes;
+  if (typeof getTimes !== 'function') {
+    return undefined;
+  }
+  return getTimes(date, latitude, longitude);
+};
+
+export const getSunTimes = (date: Date, coordinates?: SunCoordinates): CalculatedSunTimes | undefined => {
+  if (!coordinates || !Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude)) {
+    return undefined;
+  }
+
+  const times = getSunCalcTimes(date, coordinates.latitude, coordinates.longitude);
+  if (!times) {
+    return undefined;
+  }
+
+  const dawn = times.dawn instanceof Date ? times.dawn.getTime() : undefined;
+  const sunset = times.sunset instanceof Date ? times.sunset.getTime() : undefined;
+  const sunTimes: CalculatedSunTimes = {};
+
+  if (dawn !== undefined && Number.isFinite(dawn)) {
+    sunTimes.dawn = dawn;
+  }
+  if (sunset !== undefined && Number.isFinite(sunset)) {
+    sunTimes.sunset = sunset;
+  }
+
+  return Object.keys(sunTimes).length ? sunTimes : undefined;
+};
+
+export const getNextSunEvent = (coordinates?: SunCoordinates, referenceDate: Date = new Date()):
+  | CalculatedSunEvent
+  | undefined => {
+  if (!coordinates) {
+    return undefined;
+  }
+
+  const now = referenceDate.getTime();
+  if (!Number.isFinite(now)) {
+    return undefined;
+  }
+
+  const events: CalculatedSunEvent[] = [];
+  for (let offset = 0; offset <= 2; offset += 1) {
+    const date = new Date(referenceDate);
+    date.setDate(date.getDate() + offset);
+    const times = getSunTimes(date, coordinates);
+    if (!times) {
+      continue;
+    }
+    if (times.dawn !== undefined) {
+      events.push({ type: 'dawn', timestamp: times.dawn });
+    }
+    if (times.sunset !== undefined) {
+      events.push({ type: 'sunset', timestamp: times.sunset });
+    }
+  }
+
+  return events
+    .filter((event) => event.timestamp >= now - 60 * 1000)
+    .sort((a, b) => a.timestamp - b.timestamp)[0];
+};
+
 // Time of day thresholds (in minutes from midnight)
 const TIME_THRESHOLDS = {
   SUNRISE_START: 360, // 6:00
@@ -562,35 +638,32 @@ export const getTimeOfDay = (latitude?: number, longitude?: number): TimeOfDay =
   const now = new Date();
 
   if (latitude !== undefined && longitude !== undefined) {
-    const getTimes = SunCalc.getTimes || (SunCalc as any).default?.getTimes;
-    if (typeof getTimes === 'function') {
-      const times = getTimes(now, latitude, longitude);
+    const times = getSunTimes(now, { latitude, longitude });
 
-      if (times.dawn && times.sunset) {
-        const currentTime = now.getTime();
-        const dawnTime = times.dawn.getTime();
-        const sunsetTime = times.sunset.getTime();
+    if (times?.dawn !== undefined && times.sunset !== undefined) {
+      const currentTime = now.getTime();
+      const dawnTime = times.dawn;
+      const sunsetTime = times.sunset;
 
-        // Time ranges with 30-minute transitions for dawn and sunset
-        const dawnStart = dawnTime - 30 * 60 * 1000;
-        const dawnEnd = dawnTime + 30 * 60 * 1000;
-        const sunsetStart = sunsetTime - 30 * 60 * 1000;
-        const sunsetEnd = sunsetTime + 30 * 60 * 1000;
+      // Time ranges with 30-minute transitions for dawn and sunset
+      const dawnStart = dawnTime - 30 * 60 * 1000;
+      const dawnEnd = dawnTime + 30 * 60 * 1000;
+      const sunsetStart = sunsetTime - 30 * 60 * 1000;
+      const sunsetEnd = sunsetTime + 30 * 60 * 1000;
 
-        if (currentTime >= dawnStart && currentTime < dawnEnd) {
-          return { type: 'sunrise', progress: (currentTime - dawnStart) / (60 * 60 * 1000) };
-        }
-
-        if (currentTime >= dawnEnd && currentTime < sunsetStart) {
-          return { type: 'day', progress: (currentTime - dawnEnd) / (sunsetStart - dawnEnd) };
-        }
-
-        if (currentTime >= sunsetStart && currentTime < sunsetEnd) {
-          return { type: 'sunset', progress: (currentTime - sunsetStart) / (60 * 60 * 1000) };
-        }
-
-        return { type: 'night', progress: 0 };
+      if (currentTime >= dawnStart && currentTime < dawnEnd) {
+        return { type: 'sunrise', progress: (currentTime - dawnStart) / (60 * 60 * 1000) };
       }
+
+      if (currentTime >= dawnEnd && currentTime < sunsetStart) {
+        return { type: 'day', progress: (currentTime - dawnEnd) / (sunsetStart - dawnEnd) };
+      }
+
+      if (currentTime >= sunsetStart && currentTime < sunsetEnd) {
+        return { type: 'sunset', progress: (currentTime - sunsetStart) / (60 * 60 * 1000) };
+      }
+
+      return { type: 'night', progress: 0 };
     }
   }
 

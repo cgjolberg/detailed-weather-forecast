@@ -2,7 +2,6 @@ import type { HomeAssistant } from 'custom-card-helpers';
 import { html, LitElement, nothing, PropertyValues, TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import * as SunCalc from 'suncalc';
 import { formatDateWeekdayShort, formatDayPeriod, formatHourMinute, useAmPm } from '../date-time';
 import type {
   ExtraForecastAttributeConfig,
@@ -13,7 +12,7 @@ import type {
   WeatherEntity,
   WeatherIconMap,
 } from '../types';
-import { formatForecastAttribute, getWeatherStateIcon } from '../weather';
+import { formatForecastAttribute, getSunTimes, getWeatherStateIcon } from '../weather';
 
 const PRECIPITATION_DISPLAY_THRESHOLD = 0.3;
 const HOURLY_PRECIPITATION_MIN_SCALE = 1;
@@ -388,12 +387,6 @@ export class DWFHourlyList extends LitElement {
 
     const sunTimes: SunTimesByDay = {};
 
-    const getTimes = SunCalc.getTimes || (SunCalc as any).default?.getTimes;
-    if (typeof getTimes !== 'function') {
-      this._sunTimesByDay = {};
-      return;
-    }
-
     for (const item of this.forecast) {
       if (!item?.datetime) {
         continue;
@@ -410,18 +403,18 @@ export class DWFHourlyList extends LitElement {
       }
 
       const baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      let times = getTimes(baseDate, latitude, longitude);
-      let dawn = this._toTimestamp(times.dawn);
-      let sunset = this._toTimestamp(times.sunset);
+      let times = getSunTimes(baseDate, { latitude, longitude });
+      let dawn = times?.dawn;
+      let sunset = times?.sunset;
       // Keep rendered day aligned with the calendar day of the forecast even if
       // user and forecast locations sit in very different time zones.
       const dayShift = this._determineDayShift(key, dawn, sunset);
       if (dayShift !== 0) {
         const shiftedDate = new Date(baseDate);
         shiftedDate.setDate(shiftedDate.getDate() + dayShift);
-        times = getTimes(shiftedDate, latitude, longitude);
-        dawn = this._toTimestamp(times.dawn);
-        sunset = this._toTimestamp(times.sunset);
+        times = getSunTimes(shiftedDate, { latitude, longitude });
+        dawn = times?.dawn;
+        sunset = times?.sunset;
       }
       sunTimes[key] = {};
       if (dawn !== undefined) {
@@ -511,14 +504,6 @@ export class DWFHourlyList extends LitElement {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
-
-  private _toTimestamp(value?: Date): number | undefined {
-    if (!value) {
-      return undefined;
-    }
-    const time = value.getTime();
-    return Number.isFinite(time) ? time : undefined;
   }
 
   private _determineDayShift(targetKey: string, dawn?: number, sunset?: number): number {
