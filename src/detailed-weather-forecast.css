@@ -220,7 +220,8 @@
   /* background-color: rgba(0, 0, 0, 0.3); */
   padding: var(--ha-space-1, 4px) var(--ha-space-4, 16px);
   /* border-radius: 25px; */
-  max-width: 50%;
+  flex: 0 0 auto;
+  max-width: none;
   min-width: 0;
   display: inline-flex;
   align-items: center;
@@ -249,7 +250,8 @@
   padding: 2px var(--ha-space-4, 16px);
   /* border-radius: 25px; */
   max-width: 100%;
-  min-width: 50%;
+  flex: 0 1 50%;
+  min-width: max-content;
   display: inline-flex;
   align-items: center;
   justify-content: center;
