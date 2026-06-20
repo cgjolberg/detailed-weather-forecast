@@ -1,9 +1,9 @@
 # detailed-weather-forecast — Repo Overview
 
-> Snapshot: 2026-06-19. Part of the Home Assistant **file/code lane** workspace.
-> The root [`../CLAUDE.md`](../CLAUDE.md) is the authority on workspace-wide rules;
-> this file is a quick factual overview of *this repo*. Refresh it when the build,
-> deploy target, or remotes change.
+> Snapshot: 2026-06-20. Part of the Home Assistant **file/code lane** workspace.
+> The root [`../CLAUDE.md`](../CLAUDE.md) is the authority on workspace-wide rules
+> (incl. the **push/deploy autonomy policy**); this file is a quick factual overview
+> of *this repo*. **Keep it current** — see *Keeping this file current* at the bottom.
 
 ## Purpose
 A Lovelace **custom card** for Home Assistant: a detailed weather forecast card
@@ -36,9 +36,19 @@ Output bundle: `dist/detailed-weather-forecast.js`.
 - Mechanism: builds, then `scp` the single bundle to the HA box.
 - **Target:** `root@homeassistant.local:/homeassistant/www/custom-cards/detailed-weather-forecast-dev/detailed-weather-forecast.js`
   (served at `/local/custom-cards/detailed-weather-forecast-dev/detailed-weather-forecast.js`).
-- Useful switches: `-DryRun`, `-SkipBuild`, `-FullBuild`.
-- After deploy, **bump the Lovelace resource query string** (e.g. `?v=dev5`).
-- *You edit + run deploy; the script reaches the HA box over SSH. Claude Code does not.*
+- Useful switches: `-DryRun`, `-SkipBuild`, `-FullBuild`, `-NoBump`.
+- **The deploy auto-bumps the Lovelace resource** `?v=devN` for you via
+  `scripts/bump-ha-resource.mjs` (no manual edit needed; pass `-NoBump` to skip).
+- **Claude runs the whole deploy end-to-end.** Passwordless SSH key `~/.ssh/ha_deploy`
+  reaches `root@homeassistant.local`, and the bumper trusts HA's self-signed cert via
+  `NODE_EXTRA_CA_CERTS` — so no manual credential/SSH/SSL step is required. (Machine-specific
+  setup is in the `card-deploy-setup` memory, not in this repo.)
+
+## Push (GitHub)
+`git push` to `origin` is **non-interactive** — HTTPS auth is cached in Git Credential
+Manager — so Claude can commit and push without a manual auth prompt. Per the root
+autonomy policy, Claude commits with a reviewed diff, then pushes/deploys to complete a
+task (no separate approval); review via git history.
 
 ## Git
 - `origin` → `github.com/cgjolberg/detailed-weather-forecast.git`. No `upstream`
@@ -52,4 +62,16 @@ Output bundle: `dist/detailed-weather-forecast.js`.
 - **Line endings: this is the one repo that enforces LF correctly** — its
   [`.gitattributes`](.gitattributes) pins `eol=lf`, which overrides the repo's
   `core.autocrlf=true`. Use it as the template for the other repos. No `.editorconfig`.
-- `CLAUDE.md` here just points agents at `.github/copilot-instructions.md`.
+- [`CLAUDE.md`](CLAUDE.md) carries the workspace context + standing doc rule and points
+  at [`.github/copilot-instructions.md`](.github/copilot-instructions.md) for code rules.
+
+## Keeping this file current
+Treat docs as part of every change here — update them in the **same commit**, not as a
+"if I remember" follow-up. Before committing, check these still read true and fix the ones
+that don't (derive dates/status from `git`, never invent them):
+- This `OVERVIEW.md` — purpose, build, **deploy/push mechanism + target**, switches, and
+  the `> Snapshot:` line (bump to today when you touch the repo).
+- **When the deploy/push story changes** (e.g. the SSH key, the auto-bump, credential auth,
+  resource ID, or the target path), update the Deploy/Push sections here **and** the
+  `card-deploy-setup` memory **and** [`../WORKSPACE-OVERVIEW.md`](../WORKSPACE-OVERVIEW.md).
+- If a *workspace-wide* fact changes, flag [`../CLAUDE.md`](../CLAUDE.md) (shared root).
