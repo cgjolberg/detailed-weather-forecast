@@ -12,7 +12,7 @@
 
 ## Current focus
 _Idle._ Just fixed missing daily/hourly forecast icons for the `exceptional`
-condition (deployed 2026-06-26). No active task.
+condition — now a temperature-split, tinted icon (deployed 2026-06-26). No active task.
 
 ## Next steps
 - [ ] (none yet)
@@ -21,16 +21,24 @@ condition (deployed 2026-06-26). No active task.
 - (none)
 
 ## Decisions & context worth keeping
-- **Forecast icons fall back to mdi when there's no animated SVG.** `weatherSVGs`
-  in [`src/weather.ts`](src/weather.ts) covers every standard condition *except*
-  `exceptional`. NWS (this dashboard's `weather.weather`) reports extreme heat/cold
-  and hazards as `exceptional`, so those days rendered blank. `getWeatherStateIcon`
-  / `getCurrentWeatherStateIcon` now fall through to `WEATHER_CONDITION_FALLBACK_ICONS`
-  (mirrors the HA frontend's icon map) → `<ha-icon>`, sized by the existing
-  `.forecast-image-icon ha-icon` CSS. Resolution order: entity_picture → user
-  icon_map → CSS `--weather-icon-*` → animated SVG → **mdi fallback** → undefined.
+- **`exceptional` is temperature-split into tinted hot/cold/neutral icons.** NWS
+  collapses Hot, Cold, Tornado, Hurricane, Tropical storm, Dust, Smoke and Haze all
+  into the single `exceptional` condition, and the card only receives
+  `condition: exceptional` (the source word is lost) — so the only signal to tell
+  hot from cold is the day's temperature. `resolveExceptionalIcon` in
+  [`src/weather.ts`](src/weather.ts) picks: hot (≥86°F/30°C) → `mdi:sun-thermometer`
+  tinted `var(--orange-color)`; cold (≤32°F/0°C) → `mdi:snowflake-thermometer` tinted
+  `var(--blue-color)`; otherwise → `mdi:weather-hazy` (no tint). Thresholds mirror the
+  card's temp-color extremes. The unit is threaded into `getWeatherStateIcon` via a new
+  5th arg (`temperatureUnit`) from the daily/hourly lists' `_temperatureUnit()`;
+  `getCurrentWeatherStateIcon` reads it off the entity. Any *other* non-SVG condition
+  still falls back via `WEATHER_CONDITION_FALLBACK_ICONS`. Resolution order:
+  entity_picture → user icon_map → CSS `--weather-icon-*` → animated SVG →
+  **exceptional split / mdi fallback** → undefined.
 
 ## Log
 - 2026-06-20 — PLAN.md created (workspace-wide plan-tracking convention added).
-- 2026-06-26 — Fixed blank daily/hourly icons on `exceptional` days (NWS extreme
-  heat) by adding an mdi fallback map in `src/weather.ts`. Built + deployed.
+- 2026-06-26 — Fixed blank daily/hourly icons on `exceptional` days (NWS). First
+  added a generic mdi fallback; then refined `exceptional` into a temperature-split,
+  warm/cool-tinted icon (sun-thermometer / snowflake-thermometer / weather-hazy) per
+  user's pick. Built + deployed.

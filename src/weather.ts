@@ -76,15 +76,15 @@ export const weatherSVGs = new Set<string>([
 ]);
 
 // mdi fallback icons for conditions that have no built-in animated SVG (mirrors
-// the Home Assistant frontend's weather icon map). Without this, any condition
-// not in `weatherSVGs` — notably `exceptional`, which NWS reports for extreme
-// heat/cold and other hazards — would render no icon at all.
+// the Home Assistant frontend's weather icon map). Every standard condition
+// except `exceptional` already has an SVG, so in practice this only fires for
+// non-standard condition strings — `exceptional` itself is handled specially by
+// `resolveExceptionalIcon` below.
 export const WEATHER_CONDITION_FALLBACK_ICONS: {
   [key: string]: string;
 } = {
   'clear-night': 'mdi:weather-night',
   cloudy: 'mdi:weather-cloudy',
-  exceptional: 'mdi:alert-circle-outline',
   fog: 'mdi:weather-fog',
   hail: 'mdi:weather-hail',
   lightning: 'mdi:weather-lightning',
@@ -98,6 +98,53 @@ export const WEATHER_CONDITION_FALLBACK_ICONS: {
   windy: 'mdi:weather-windy',
   'windy-variant': 'mdi:weather-windy-variant',
 };
+
+// The NWS integration collapses "Hot", "Cold", "Tornado", "Hurricane
+// conditions", "Tropical storm conditions", "Dust", "Smoke" and "Haze" all into
+// the single `exceptional` condition, so the condition alone can't tell hot from
+// cold. We disambiguate by the day's temperature: hot days get a warm
+// sun-over-thermometer, cold days a cool snowflake-over-thermometer, and the
+// in-between (dust/smoke/haze/etc.) a neutral haze icon. Tints reuse the card's
+// standard temperature-color vars.
+interface ExceptionalIconChoice {
+  icon: string;
+  color?: string;
+}
+
+const EXCEPTIONAL_HOT_ICON: ExceptionalIconChoice = {
+  icon: 'mdi:sun-thermometer',
+  color: 'var(--orange-color, #ff9800)',
+};
+const EXCEPTIONAL_COLD_ICON: ExceptionalIconChoice = {
+  icon: 'mdi:snowflake-thermometer',
+  color: 'var(--blue-color, #2196f3)',
+};
+const EXCEPTIONAL_NEUTRAL_ICON: ExceptionalIconChoice = { icon: 'mdi:weather-hazy' };
+
+const resolveExceptionalIcon = (
+  temperature?: number | null,
+  temperatureUnit?: string,
+): ExceptionalIconChoice => {
+  if (typeof temperature === 'number' && Number.isFinite(temperature)) {
+    // Thresholds mirror the card's temperature-color extremes (hot >= 86°F/30°C,
+    // cold <= 32°F/0°C). NWS reports in °F, so anything but °C uses °F bounds.
+    const isCelsius = temperatureUnit === '°C';
+    const hotThreshold = isCelsius ? 30 : 86;
+    const coldThreshold = isCelsius ? 0 : 32;
+    if (temperature >= hotThreshold) {
+      return EXCEPTIONAL_HOT_ICON;
+    }
+    if (temperature <= coldThreshold) {
+      return EXCEPTIONAL_COLD_ICON;
+    }
+  }
+  return EXCEPTIONAL_NEUTRAL_ICON;
+};
+
+const renderExceptionalIcon = (choice: ExceptionalIconChoice): TemplateResult =>
+  choice.color
+    ? html`<ha-icon icon=${choice.icon} style=${styleMap({ color: choice.color })}></ha-icon>`
+    : html`<ha-icon icon=${choice.icon}></ha-icon>`;
 
 const cloudyStates = new Set<string>([
   'partlycloudy',
@@ -329,6 +376,7 @@ export const getWeatherStateIcon = (
   element: HTMLElement,
   nightTime?: boolean,
   iconMap?: WeatherIconMap,
+  temperatureUnit?: string,
 ): TemplateResult | undefined => {
   if (item.entity_picture) {
     return html`<img class="entity-picture-icon" src=${item.entity_picture} alt=${item.condition || ''} />`;
@@ -358,6 +406,10 @@ export const getWeatherStateIcon = (
 
   if (weatherSVGs.has(state)) {
     return html`${getWeatherStateSVG(state, nightTime)}`;
+  }
+
+  if (state === 'exceptional') {
+    return renderExceptionalIcon(resolveExceptionalIcon(item.temperature, temperatureUnit));
   }
 
   const fallbackIcon = WEATHER_CONDITION_FALLBACK_ICONS[state];
@@ -402,6 +454,12 @@ export const getCurrentWeatherStateIcon = (
 
   if (weatherSVGs.has(state)) {
     return html`${getWeatherStateSVG(state, nightTime)}`;
+  }
+
+  if (state === 'exceptional') {
+    return renderExceptionalIcon(
+      resolveExceptionalIcon(entity.attributes.temperature, entity.attributes.temperature_unit),
+    );
   }
 
   const fallbackIcon = WEATHER_CONDITION_FALLBACK_ICONS[state];

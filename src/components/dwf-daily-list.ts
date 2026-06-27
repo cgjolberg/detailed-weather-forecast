@@ -63,7 +63,7 @@ export class DWFDailyList extends LitElement {
         <div class="day-of-month ${isSelected ? 'selected' : ''}">
           ${!newDay ? formatDateDayTwoDigit(date, this.hass.locale as any, this.hass.config as any) : ''}
         </div>
-        <div class="forecast-image-icon">${getWeatherStateIcon(item, this, false, this.iconMap)}</div>
+        <div class="forecast-image-icon">${getWeatherStateIcon(item, this, false, this.iconMap, this._temperatureUnit())}</div>
         <div class="temp" style=${tempColor ? styleMap({ color: tempColor }) : nothing}>
           ${this._hasValidValue(item.temperature) ? html`${Math.round(item.temperature!)}°` : '—'}
         </div>
@@ -170,6 +170,10 @@ export class DWFDailyList extends LitElement {
         }
       });
     }
+  }
+
+  private _temperatureUnit(): string | undefined {
+    return this.weatherEntity?.attributes?.temperature_unit ?? this.hass?.config?.unit_system?.temperature;
   }
 
   private _getTemperatureColor(temperature: number): string {

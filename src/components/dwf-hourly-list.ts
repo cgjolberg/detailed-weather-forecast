@@ -205,12 +205,16 @@ export class DWFHourlyList extends LitElement {
         <div class="${dateClasses.join(' ')}">${dateLabel}</div>
         ${showAmPm ? html`<div class="ampm">${amPmLabel ?? ''}</div>` : ''}
         <div class="forecast-image-icon">
-          ${getWeatherStateIcon(item, this, this._shouldUseNightIcon(item, date), this.iconMap)}
+          ${getWeatherStateIcon(item, this, this._shouldUseNightIcon(item, date), this.iconMap, this._temperatureUnit())}
         </div>
         <div class="temp" style=${styleMap({ color: tempColor })}>${Math.round(item.temperature)}°</div>
         ${this._renderPrecipitationInfo(item, precipitationScale)} ${this._renderExtraAttribute(item)}
       </div>
     `;
+  }
+
+  private _temperatureUnit(): string | undefined {
+    return this.weatherEntity?.attributes?.temperature_unit ?? this.hass?.config?.unit_system?.temperature;
   }
 
   private _getTemperatureColor(temperature: number): string {
