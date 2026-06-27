@@ -75,6 +75,30 @@ export const weatherSVGs = new Set<string>([
   'windy-variant',
 ]);
 
+// mdi fallback icons for conditions that have no built-in animated SVG (mirrors
+// the Home Assistant frontend's weather icon map). Without this, any condition
+// not in `weatherSVGs` — notably `exceptional`, which NWS reports for extreme
+// heat/cold and other hazards — would render no icon at all.
+export const WEATHER_CONDITION_FALLBACK_ICONS: {
+  [key: string]: string;
+} = {
+  'clear-night': 'mdi:weather-night',
+  cloudy: 'mdi:weather-cloudy',
+  exceptional: 'mdi:alert-circle-outline',
+  fog: 'mdi:weather-fog',
+  hail: 'mdi:weather-hail',
+  lightning: 'mdi:weather-lightning',
+  'lightning-rainy': 'mdi:weather-lightning-rainy',
+  partlycloudy: 'mdi:weather-partly-cloudy',
+  pouring: 'mdi:weather-pouring',
+  rainy: 'mdi:weather-rainy',
+  snowy: 'mdi:weather-snowy',
+  'snowy-rainy': 'mdi:weather-snowy-rainy',
+  sunny: 'mdi:weather-sunny',
+  windy: 'mdi:weather-windy',
+  'windy-variant': 'mdi:weather-windy-variant',
+};
+
 const cloudyStates = new Set<string>([
   'partlycloudy',
   'cloudy',
@@ -336,6 +360,11 @@ export const getWeatherStateIcon = (
     return html`${getWeatherStateSVG(state, nightTime)}`;
   }
 
+  const fallbackIcon = WEATHER_CONDITION_FALLBACK_ICONS[state];
+  if (fallbackIcon) {
+    return html`<ha-icon icon=${fallbackIcon}></ha-icon>`;
+  }
+
   return undefined;
 };
 
@@ -373,6 +402,11 @@ export const getCurrentWeatherStateIcon = (
 
   if (weatherSVGs.has(state)) {
     return html`${getWeatherStateSVG(state, nightTime)}`;
+  }
+
+  const fallbackIcon = WEATHER_CONDITION_FALLBACK_ICONS[state];
+  if (fallbackIcon) {
+    return html`<ha-icon icon=${fallbackIcon}></ha-icon>`;
   }
 
   return undefined;
