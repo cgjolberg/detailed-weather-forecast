@@ -102,29 +102,10 @@ export const WEATHER_CONDITION_FALLBACK_ICONS: {
 // The NWS integration collapses "Hot", "Cold", "Tornado", "Hurricane
 // conditions", "Tropical storm conditions", "Dust", "Smoke" and "Haze" all into
 // the single `exceptional` condition, so the condition alone can't tell hot from
-// cold. We disambiguate by the day's temperature: hot days get a warm
-// sun-over-thermometer, cold days a cool snowflake-over-thermometer, and the
-// in-between (dust/smoke/haze/etc.) a neutral haze icon. Tints reuse the card's
-// standard temperature-color vars.
-interface ExceptionalIconChoice {
-  icon: string;
-  color?: string;
-}
+// cold. We disambiguate by the day's temperature.
+type ExceptionalKind = 'hot' | 'cold' | 'neutral';
 
-const EXCEPTIONAL_HOT_ICON: ExceptionalIconChoice = {
-  icon: 'mdi:sun-thermometer',
-  color: 'var(--orange-color, #ff9800)',
-};
-const EXCEPTIONAL_COLD_ICON: ExceptionalIconChoice = {
-  icon: 'mdi:snowflake-thermometer',
-  color: 'var(--blue-color, #2196f3)',
-};
-const EXCEPTIONAL_NEUTRAL_ICON: ExceptionalIconChoice = { icon: 'mdi:weather-hazy' };
-
-const resolveExceptionalIcon = (
-  temperature?: number | null,
-  temperatureUnit?: string,
-): ExceptionalIconChoice => {
+const resolveExceptionalKind = (temperature?: number | null, temperatureUnit?: string): ExceptionalKind => {
   if (typeof temperature === 'number' && Number.isFinite(temperature)) {
     // Thresholds mirror the card's temperature-color extremes (hot >= 86°F/30°C,
     // cold <= 32°F/0°C). NWS reports in °F, so anything but °C uses °F bounds.
@@ -132,19 +113,49 @@ const resolveExceptionalIcon = (
     const hotThreshold = isCelsius ? 30 : 86;
     const coldThreshold = isCelsius ? 0 : 32;
     if (temperature >= hotThreshold) {
-      return EXCEPTIONAL_HOT_ICON;
+      return 'hot';
     }
     if (temperature <= coldThreshold) {
-      return EXCEPTIONAL_COLD_ICON;
+      return 'cold';
     }
   }
-  return EXCEPTIONAL_NEUTRAL_ICON;
+  return 'neutral';
 };
 
-const renderExceptionalIcon = (choice: ExceptionalIconChoice): TemplateResult =>
-  choice.color
-    ? html`<ha-icon icon=${choice.icon} style=${styleMap({ color: choice.color })}></ha-icon>`
-    : html`<ha-icon icon=${choice.icon}></ha-icon>`;
+// A thermometer drawn in the card's icon style: a white tube + bulb (matching
+// the cloud-front tone) with a temperature-colored mercury column. Shared by the
+// hot and cold exceptional icons.
+const thermometerSVG = (fillClass: string): SVGTemplateResult => svg`
+  <rect class="thermo-body" x="11.5" y="2.6" width="2.7" height="9.6" rx="1.35" />
+  <circle class="thermo-body" cx="12.85" cy="13.3" r="2.8" />
+  <rect class="${fillClass}" x="12.3" y="6.2" width="1.1" height="6.8" rx="0.55" />
+  <circle class="${fillClass}" cx="12.85" cy="13.3" r="1.75" />
+`;
+
+// Native layered SVGs for `exceptional`, drawn in the card's own 17x17 icon style
+// (CSS-class fills) so they match the built-in weather icons rather than a flat
+// mdi glyph. Hot = warm sun + red thermometer, cold = snowflake + blue
+// thermometer. `neutral` (rare: dust/smoke/haze at a mild temp) keeps mdi haze.
+const getExceptionalIcon = (kind: ExceptionalKind): TemplateResult => {
+  if (kind === 'neutral') {
+    return html`<ha-icon icon="mdi:weather-hazy"></ha-icon>`;
+  }
+  const inner =
+    kind === 'hot'
+      ? svg`
+          <circle class="weather-sun-hot" cx="6.1" cy="8.2" r="4.9" />
+          ${thermometerSVG('thermo-fill-hot')}
+        `
+      : svg`
+          <g class="weather-flake">
+            <line x1="1.6" y1="8" x2="9.2" y2="8" />
+            <line x1="3.5" y1="4.71" x2="7.3" y2="11.29" />
+            <line x1="7.3" y1="4.71" x2="3.5" y2="11.29" />
+          </g>
+          ${thermometerSVG('thermo-fill-cold')}
+        `;
+  return html`${svg`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 17">${inner}</svg>`}`;
+};
 
 const cloudyStates = new Set<string>([
   'partlycloudy',
@@ -409,7 +420,7 @@ export const getWeatherStateIcon = (
   }
 
   if (state === 'exceptional') {
-    return renderExceptionalIcon(resolveExceptionalIcon(item.temperature, temperatureUnit));
+    return getExceptionalIcon(resolveExceptionalKind(item.temperature, temperatureUnit));
   }
 
   const fallbackIcon = WEATHER_CONDITION_FALLBACK_ICONS[state];
@@ -457,8 +468,8 @@ export const getCurrentWeatherStateIcon = (
   }
 
   if (state === 'exceptional') {
-    return renderExceptionalIcon(
-      resolveExceptionalIcon(entity.attributes.temperature, entity.attributes.temperature_unit),
+    return getExceptionalIcon(
+      resolveExceptionalKind(entity.attributes.temperature, entity.attributes.temperature_unit),
     );
   }
 

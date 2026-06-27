@@ -724,6 +724,25 @@
   stroke-width: 1;
   paint-order: stroke;
 }
+/* exceptional (NWS Hot/Cold) — sun/snowflake + thermometer */
+.weather-sun-hot {
+  fill: var(--weather-icon-sun-hot-color, #f5921e);
+}
+.thermo-body {
+  fill: var(--weather-icon-thermo-body-color, #f3f3f3);
+}
+.thermo-fill-hot {
+  fill: var(--weather-icon-thermo-hot-color, #e63b1e);
+}
+.thermo-fill-cold {
+  fill: var(--weather-icon-thermo-cold-color, #2f9fe6);
+}
+.weather-flake {
+  fill: none;
+  stroke: var(--weather-icon-flake-color, #cfe0f0);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+}
 
 dwf-current-weather-attributes {
   display: contents;
