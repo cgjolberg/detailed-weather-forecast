@@ -14,6 +14,13 @@ via Git Credential Manager. Per the root **autonomy policy**: commit with a revi
 then push to GitHub and deploy to HA to complete the task — no separate approval; review via
 git history. No history rewriting without an explicit instruction. See [`OVERVIEW.md`](OVERVIEW.md).
 
+**Run it prompt-free (allowlisted in [`../.claude/settings.json`](../.claude/settings.json), 2026-06-28):**
+invoke as **standalone, forward-slash, `cd`-free** commands — in-repo `git push origin main` then
+`./deploy.cmd`, or from the workspace root `git -C ./detailed-weather-forecast push origin main`
+then `./detailed-weather-forecast/deploy.cmd`. A `cd`-prefixed, back-slashed (`.\deploy.cmd`), or
+piped/chained form won't match the allowlist and will prompt. Force-push and `upstream` pushes are
+deliberately left to prompt.
+
 ## Working plan: read PLAN.md first, keep it updated
 [`PLAN.md`](PLAN.md) is the persistent record of what we're doing in this repo — current
 focus, next steps, open questions, decisions, and a dated log. **Read it at the start of any
