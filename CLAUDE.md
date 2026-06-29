@@ -21,6 +21,13 @@ then `./detailed-weather-forecast/deploy.cmd`. A `cd`-prefixed, back-slashed (`.
 piped/chained form won't match the allowlist and will prompt. Force-push and `upstream` pushes are
 deliberately left to prompt.
 
+> **Allowlist scoping:** scoped into this repo (the `cd`-into-it workflow), the live permissions are
+> **this repo's own** [`.claude/settings.json`](.claude/settings.json) + your user settings — **not**
+> the parent's. So the deploy/push entries above live here too, alongside the workspace's shared
+> **read-only MCP allowlist** (HA `ha_*` reads + Chrome reads) — kept **in sync across all repos + the
+> root** and **never** moved to user/global `~/.claude/settings.json` (auto-approval is scoped to this
+> tree on purpose). Full logic: root [`../CLAUDE.md`](../CLAUDE.md) → *Permission allowlists*.
+
 ## Working plan: read PLAN.md first, keep it updated
 [`PLAN.md`](PLAN.md) is the persistent record of what we're doing in this repo — current
 focus, next steps, open questions, decisions, and a dated log. **Read it at the start of any
