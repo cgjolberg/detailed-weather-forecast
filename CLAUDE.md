@@ -26,7 +26,7 @@ deliberately left to prompt.
 > the parent's. So the deploy/push entries above live here too, alongside the workspace's shared
 > **read-only MCP allowlist** (HA `ha_*` reads + Chrome reads) — kept **in sync across all repos + the
 > root** and **never** moved to user/global `~/.claude/settings.json` (auto-approval is scoped to this
-> tree on purpose). Full logic: root [`../CLAUDE.md`](../CLAUDE.md) → *Permission allowlists*. **Shell: use the PowerShell tool only — the Bash tool is disabled here (`deny: ["Bash"]`); run every command via PowerShell.**
+> tree on purpose). Full logic: root [`../CLAUDE.md`](../CLAUDE.md) → *Permission allowlists*. **Shell: prefer the PowerShell tool.** The Bash tool is enabled; the dev-loop wrappers are allowlisted under **both** `Bash(...)` and `PowerShell(...)` (so they run prompt-free whichever facade Claude picks), but PowerShell stays the default here.
 
 ## Working plan: read PLAN.md first, keep it updated
 [`PLAN.md`](PLAN.md) is the persistent record of what we're doing in this repo — current
