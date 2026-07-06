@@ -27,6 +27,16 @@ deliberately left to prompt.
 > **read-only MCP allowlist** (HA `ha_*` reads + Chrome reads) — kept **in sync across all repos + the
 > root** and **never** moved to user/global `~/.claude/settings.json` (auto-approval is scoped to this
 > tree on purpose). Full logic: root [`../CLAUDE.md`](../CLAUDE.md) → *Permission allowlists*. **Shell: prefer the PowerShell tool.** The Bash tool is enabled; the dev-loop wrappers are allowlisted under **both** `Bash(...)` and `PowerShell(...)` (so they run prompt-free whichever facade Claude picks), but PowerShell stays the default here.
+>
+> **2026-07-05:** a Claude Code **2.1.197 regression** currently ignores these `Bash(...)`/`PowerShell(...)`
+> allowlist entries in desktop sessions — expect prompts despite correct form. Entries + form rules stay;
+> until fixed, minimize shell calls (wrappers like `./deploy.cmd`; from a workspace-root session,
+> `./commit-push.cmd "<msg>"` covers commit+push). Status + verify-fixed checklist:
+> [`../.claude/PERMISSIONS.md`](../.claude/PERMISSIONS.md).
+>
+> **2026-07-06:** mitigated by the workspace **PreToolUse permission hook** (Layer 0,
+> `../.claude/permission-hook.ps1`) — auto-allows these commands under either shell tool; the
+> declarative entries are kept as fallback. See [`../.claude/PERMISSIONS.md`](../.claude/PERMISSIONS.md).
 
 ## Working plan: read PLAN.md first, keep it updated
 [`PLAN.md`](PLAN.md) is the persistent record of what we're doing in this repo — current
