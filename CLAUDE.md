@@ -24,11 +24,11 @@ committed wrappers (`./deploy.cmd`, `../commit-push.cmd`) over ad-hoc commands.
 
 ## Working plan: read PLAN.md first, keep it updated
 [`PLAN.md`](PLAN.md) is the persistent record of what we're doing in this repo — current
-focus, next steps, open questions, decisions, and a dated log. **Read it at the start of any
-work here** (the workspace `SessionStart` hook also auto-prints its *Current focus* + *Next
-steps*). **Update it as part of every change, in the same commit** as the work: keep *Current
-focus* honest, move finished items out of *Next steps*, and append to the *Log*. This is how
-we avoid losing track when we bounce between projects.
+focus, next steps, open questions, decisions. **No Log — git history is the record.** Read it
+at the start of any work here (the workspace `SessionStart` hook also auto-prints its *Current
+focus* + *Next steps*). **Update it as part of every change, in the same commit** as the work:
+keep *Current focus* honest and prune shipped items out of *Next steps* right when they land.
+This is how we avoid losing track when we bounce between projects.
 
 ## Standing rule: keep docs current without being asked
 On any change that affects build, deploy, push/credentials, or behavior, update

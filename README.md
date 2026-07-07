@@ -41,7 +41,7 @@ This card is a further development of the [Weather Forecast Extended Card](https
 Deploy from this repo root with:
 
 ```powershell
-.\deploy.cmd
+./deploy.cmd
 ```
 
 ## Usage
