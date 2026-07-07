@@ -1,6 +1,6 @@
 # detailed-weather-forecast — Repo Overview
 
-> Snapshot: 2026-06-26. Part of the Home Assistant **file/code lane** workspace.
+> Snapshot: 2026-07-07. Part of the Home Assistant **file/code lane** workspace.
 > The root [`../CLAUDE.md`](../CLAUDE.md) is the authority on workspace-wide rules
 > (incl. the **push/deploy autonomy policy**); this file is a quick factual overview
 > of *this repo*. **Keep it current** — see *Keeping this file current* at the bottom.
@@ -31,7 +31,7 @@ Output bundle: `dist/detailed-weather-forecast.js`.
 
 ## Deploy (dev channel)
 ```powershell
-.\deploy.cmd            # wrapper -> deploy.ps1 -> scripts\deploy-ha-dev.ps1
+./deploy.cmd            # wrapper -> deploy.ps1 -> scripts\deploy-ha-dev.ps1
 ```
 - Mechanism: builds, then `scp` the single bundle to the HA box.
 - **Target:** `root@homeassistant.local:/homeassistant/www/custom-cards/detailed-weather-forecast-dev/detailed-weather-forecast.js`
@@ -45,10 +45,8 @@ Output bundle: `dist/detailed-weather-forecast.js`.
   setup is in the `card-deploy-setup` memory, not in this repo.)
 
 ## Push (GitHub)
-`git push` to `origin` is **non-interactive** — HTTPS auth is cached in Git Credential
-Manager — so Claude can commit and push without a manual auth prompt. Per the root
-autonomy policy, Claude commits with a reviewed diff, then pushes/deploys to complete a
-task (no separate approval); review via git history.
+`origin` → `github.com/cgjolberg/detailed-weather-forecast`, branch `main`; push/deploy is
+autonomous per the root policy (root [`../CLAUDE.md`](../CLAUDE.md) → *Deployment*).
 
 ## Git
 - `origin` → `github.com/cgjolberg/detailed-weather-forecast.git`. No `upstream`

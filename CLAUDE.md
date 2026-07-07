@@ -7,36 +7,20 @@ Part of the Home Assistant **file/code lane** workspace. Read order:
 - [`../CLAUDE.md`](../CLAUDE.md) — workspace-wide authority, incl. the full push/deploy policy.
 
 ## Deploy & push (Claude does this end-to-end)
-`.\deploy.cmd` builds, `scp`s the bundle to the HA box, and **auto-bumps** the Lovelace
+`./deploy.cmd` builds, `scp`s the bundle to the HA box, and **auto-bumps** the Lovelace
 resource. Passwordless SSH (`~/.ssh/ha_deploy`) + self-signed-cert trust
 (`NODE_EXTRA_CA_CERTS`) make it non-interactive; `git push` to GitHub is non-interactive
 via Git Credential Manager. Per the root **autonomy policy**: commit with a reviewed diff,
 then push to GitHub and deploy to HA to complete the task — no separate approval; review via
 git history. No history rewriting without an explicit instruction. See [`OVERVIEW.md`](OVERVIEW.md).
 
-**Run it prompt-free (allowlisted in [`../.claude/settings.json`](../.claude/settings.json), 2026-06-28):**
-invoke as **standalone, forward-slash, `cd`-free** commands — in-repo `git push origin main` then
-`./deploy.cmd`, or from the workspace root `git -C ./detailed-weather-forecast push origin main`
-then `./detailed-weather-forecast/deploy.cmd`. A `cd`-prefixed, back-slashed (`.\deploy.cmd`), or
-piped/chained form won't match the allowlist and will prompt. Force-push and `upstream` pushes are
-deliberately left to prompt.
-
-> **Allowlist scoping:** scoped into this repo (the `cd`-into-it workflow), the live permissions are
-> **this repo's own** [`.claude/settings.json`](.claude/settings.json) + your user settings — **not**
-> the parent's. So the deploy/push entries above live here too, alongside the workspace's shared
-> **read-only MCP allowlist** (HA `ha_*` reads + Chrome reads) — kept **in sync across all repos + the
-> root** and **never** moved to user/global `~/.claude/settings.json` (auto-approval is scoped to this
-> tree on purpose). Full logic: root [`../CLAUDE.md`](../CLAUDE.md) → *Permission allowlists*. **Shell: prefer the PowerShell tool.** The Bash tool is enabled; the dev-loop wrappers are allowlisted under **both** `Bash(...)` and `PowerShell(...)` (so they run prompt-free whichever facade Claude picks), but PowerShell stays the default here.
->
-> **2026-07-05:** a Claude Code **2.1.197 regression** currently ignores these `Bash(...)`/`PowerShell(...)`
-> allowlist entries in desktop sessions — expect prompts despite correct form. Entries + form rules stay;
-> until fixed, minimize shell calls (wrappers like `./deploy.cmd`; from a workspace-root session,
-> `./commit-push.cmd "<msg>"` covers commit+push). Status + verify-fixed checklist:
-> [`../.claude/PERMISSIONS.md`](../.claude/PERMISSIONS.md).
->
-> **2026-07-06:** mitigated by the workspace **PreToolUse permission hook** (Layer 0,
-> `../.claude/permission-hook.ps1`) — auto-allows these commands under either shell tool; the
-> declarative entries are kept as fallback. See [`../.claude/PERMISSIONS.md`](../.claude/PERMISSIONS.md).
+Deploy/push runs prompt-free via the workspace permission layer — a PreToolUse hook (Layer 0)
+plus this repo's own [`.claude/settings.json`](.claude/settings.json) as declarative fallback
+when the session is scoped here. Exact pushes only (`git push origin main`); force-push and
+`upstream` pushes always prompt by design. Form contract, current status, and maintenance rules:
+root [`../CLAUDE.md`](../CLAUDE.md) (*Shell commands & permission prompts*) and
+[`../.claude/PERMISSIONS.md`](../.claude/PERMISSIONS.md). Prefer the PowerShell tool and the
+committed wrappers (`./deploy.cmd`, `../commit-push.cmd`) over ad-hoc commands.
 
 ## Working plan: read PLAN.md first, keep it updated
 [`PLAN.md`](PLAN.md) is the persistent record of what we're doing in this repo — current
