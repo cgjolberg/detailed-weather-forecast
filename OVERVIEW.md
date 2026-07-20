@@ -1,6 +1,6 @@
 # detailed-weather-forecast — Repo Overview
 
-> Snapshot: 2026-07-07. Part of the Home Assistant **file/code lane** workspace.
+> Snapshot: 2026-07-19. Part of the Home Assistant **file/code lane** workspace.
 > The root [`../CLAUDE.md`](../CLAUDE.md) is the authority on workspace-wide rules
 > (incl. the **push/deploy autonomy policy**); this file is a quick factual overview
 > of *this repo*. **Keep it current** — see *Keeping this file current* at the bottom.
@@ -57,9 +57,10 @@ autonomous per the root policy (root [`../CLAUDE.md`](../CLAUDE.md) → *Deploym
 - Branch `main`. As of snapshot: clean working tree.
 
 ## Repo-specific notes
-- **Line endings: this is the one repo that enforces LF correctly** — its
-  [`.gitattributes`](.gitattributes) pins `eol=lf`, which overrides the repo's
-  `core.autocrlf=true`. Use it as the template for the other repos. No `.editorconfig`.
+- **Line endings — enforced.** The committed [`.gitattributes`](.gitattributes) pins `eol=lf`
+  (overriding the local `core.autocrlf` setting) and was the template the other repos copied —
+  all five now have their LF pins in place (per-repo status:
+  [`../WORKSPACE-OVERVIEW.md`](../WORKSPACE-OVERVIEW.md)). No `.editorconfig`.
 - [`CLAUDE.md`](CLAUDE.md) carries the workspace context + standing doc rule and points
   at [`.github/copilot-instructions.md`](.github/copilot-instructions.md) for code rules.
 
