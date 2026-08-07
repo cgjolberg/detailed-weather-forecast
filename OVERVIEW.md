@@ -1,6 +1,6 @@
 # detailed-weather-forecast — Repo Overview
 
-> Snapshot: 2026-07-19. Part of the Home Assistant **file/code lane** workspace.
+> Snapshot: 2026-08-06. Part of the Home Assistant **file/code lane** workspace.
 > The root [`../CLAUDE.md`](../CLAUDE.md) is the authority on workspace-wide rules
 > (incl. the **push/deploy autonomy policy**); this file is a quick factual overview
 > of *this repo*. **Keep it current** — see *Keeping this file current* at the bottom.
@@ -40,8 +40,8 @@ Output bundle: `dist/detailed-weather-forecast.js`.
 - **The deploy auto-bumps the Lovelace resource** `?v=devN` for you via
   `scripts/bump-ha-resource.mjs` (no manual edit needed; pass `-NoBump` to skip).
 - **Claude runs the whole deploy end-to-end.** Passwordless SSH key `~/.ssh/ha_deploy`
-  reaches `root@homeassistant.local`, and the bumper trusts HA's self-signed cert via
-  `NODE_EXTRA_CA_CERTS` — so no manual credential/SSH/SSL step is required. (Machine-specific
+  reaches `root@homeassistant.local`, and the bumper talks to HA over **plain `ws://`**
+  (TLS retired 2026-08-06) — so no manual credential/SSH/SSL step is required. (Machine-specific
   setup is in the `card-deploy-setup` memory, not in this repo.)
 
 ## Push (GitHub)

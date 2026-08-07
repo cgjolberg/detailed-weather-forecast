@@ -20,10 +20,10 @@ if (!resourceId) {
   process.exit(2);
 }
 
-// Connect by hostname over TLS: HA serves HTTPS on this port with a self-signed
-// cert whose CN/SAN is the hostname (not the IP), so we must use the name. Node
-// trusts the cert via the NODE_EXTRA_CA_CERTS env var pointing at fullchain.pem.
-const wsUrl = `wss://${host}:${port}/api/websocket`;
+// Plaintext WebSocket: HA serves plain HTTP on this port (TLS retired 2026-08-06
+// along with the Studio Code Server add-on that needed a secure context). No CA
+// trust to arrange — HA_HOST may be a hostname or an IP.
+const wsUrl = `ws://${host}:${port}/api/websocket`;
 const ws = new WebSocket(wsUrl);
 const send = (obj) => ws.send(JSON.stringify(obj));
 
