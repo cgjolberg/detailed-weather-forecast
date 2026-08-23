@@ -39,11 +39,20 @@ export interface HeaderConditionConfig {
  * notched rule swaps it for a `filter: drop-shadow()`, which is applied to the post-clip
  * result and therefore hugs the L. Give it a `box-shadow` value WITHOUT a spread radius --
  * `drop-shadow()` has no spread parameter.
+ *
+ * `corner_radius` rounds the notch's two CONVEX corners (where the cut meets the card's
+ * right and bottom edges); `inner_radius` rounds the single CONCAVE one between them. They
+ * are separate because concentric rounding wants them different: if something sits in the
+ * notch with radius `t` and a gap `g` around it, the concave corner needs `t + g` for that
+ * gap to stay an even width around the corner, while the convex pair are ordinary outer
+ * corners of the card and should match its own radius. Both default to the card's radius.
  */
 export interface NotchConfig {
   width?: number | string;
   height?: number | string;
   shadow?: string;
+  corner_radius?: number | string;
+  inner_radius?: number | string;
 }
 
 export interface DetailedWeatherForecastConfig extends LovelaceCardConfig {

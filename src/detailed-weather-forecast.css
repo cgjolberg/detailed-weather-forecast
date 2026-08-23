@@ -48,25 +48,64 @@
  * Notched (L-shaped) card -- a rectangular bite out of the bottom-right corner so another
  * card can tuck into the gap. Set via the `notch:` option; see NotchConfig in types.ts.
  *
- * The three OUTER corners keep their rounding for free: border-radius rounds the painted
- * background first and the polygon covers those corners, so only the step is squared off.
+ * clip-path cuts the element's PAINTED BOX, which is where a card's whole edge treatment
+ * lives, so both of the following are consequences of the cut rather than choices:
  *
- * The box-shadow swap is not cosmetic. clip-path clips the shadow away along with everything
- * else, which would leave the card completely flat. `filter` applies to the post-clip result,
- * so a drop-shadow there hugs the L instead. NOTE drop-shadow() takes no spread radius -- a
- * box-shadow value with four lengths will not transfer.
+ * 1. The border cannot survive it. A border is painted on the box's four edges; the cut adds
+ *    two edges that were never part of the box and slices through two that were. So the
+ *    border is switched off and the entire outline is redrawn by ::after below.
+ * 2. The box-shadow cannot survive it either -- it is clipped away with everything else,
+ *    leaving the card flat. `filter` applies to the post-clip result, so a drop-shadow there
+ *    hugs the L instead. NOTE drop-shadow() takes no spread radius: a box-shadow value with
+ *    four lengths will not transfer.
+ *
+ * `--dwf-notch-clip` and `--dwf-notch-ring` are generated in _traceNotch(); they are constant
+ * strings of calc() over the properties below, so nothing here needs the card's pixel size.
  */
 .weather-card.notched {
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% calc(100% - var(--dwf-notch-height)),
-    calc(100% - var(--dwf-notch-width)) calc(100% - var(--dwf-notch-height)),
-    calc(100% - var(--dwf-notch-width)) 100%,
-    0 100%
-  );
+  --dwf-notch-bw: var(--ha-card-border-width, 1px);
+  --dwf-notch-outer-radius: var(--ha-card-border-radius, 12px);
+
+  /* The outline eroded by one border width -- the inner boundary of the ring. The card
+     shrinks, so the notch GROWS and its concave radius grows with it, while the two convex
+     radii shrink. Getting a sign wrong here shows up as a ring of uneven thickness. */
+  --dwf-notch-eroded-width: calc(var(--dwf-notch-width) + var(--dwf-notch-bw));
+  --dwf-notch-eroded-height: calc(var(--dwf-notch-height) + var(--dwf-notch-bw));
+  --dwf-notch-eroded-outer-radius: calc(var(--dwf-notch-outer-radius) - var(--dwf-notch-bw));
+  --dwf-notch-eroded-corner-radius: calc(var(--dwf-notch-corner-radius) - var(--dwf-notch-bw));
+  --dwf-notch-eroded-inner-radius: calc(var(--dwf-notch-inner-radius) + var(--dwf-notch-bw));
+
+  clip-path: var(--dwf-notch-clip);
+
+  /* transparent, NOT `border: none`. Keeping the border box keeps every metric and the whole
+     clip coordinate space byte-identical, and keeps the drop-shadow's alpha map identical
+     too, because ::after ends up covering that same 1px band in that same colour. */
+  border-color: transparent;
+
   box-shadow: none;
   filter: drop-shadow(var(--dwf-notch-shadow, 0 4px 16px rgba(20, 22, 28, 0.1)));
+}
+
+/*
+ * The outline, redrawn as a ring: the silhouette and its eroded copy in a single evenodd
+ * path, filled with the theme's border colour. This is the only way to get a stroke that runs
+ * continuously around the cut -- `border-*` cannot follow an arc, so a partial stroke along
+ * the two new edges could never join the surviving border cleanly at the step.
+ *
+ * It paints above the content, which is harmless: a one-pixel ring at the extreme edge cannot
+ * reach the header, which carries 12-16px of padding. `pointer-events: none` keeps the
+ * condition's tap target intact.
+ *
+ * If --ha-card-border-color is undefined the background declaration is invalid at computed
+ * value time and resolves to transparent, so a themeless card simply gets no outline.
+ */
+.weather-card.notched::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--ha-card-border-color, transparent);
+  clip-path: var(--dwf-notch-ring);
 }
 
 .animation-container {

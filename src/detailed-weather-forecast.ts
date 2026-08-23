@@ -384,7 +384,162 @@ export class DetailedWeatherForecast extends LitElement {
 
     const shadow = typeof notch.shadow === 'string' && notch.shadow.trim() ? notch.shadow.trim() : undefined;
 
-    return { width, height, shadow };
+    return {
+      width,
+      height,
+      shadow,
+      corner_radius: this._normalizeCssSizeValue(notch.corner_radius),
+      inner_radius: this._normalizeCssSizeValue(notch.inner_radius),
+    };
+  }
+
+  /**
+   * A 90-degree arc sampled as seven points, each a multiple of the radius: `c` is 1-cos and
+   * `s` is 1-sin. Six segments keeps the worst-case radial error at r * (1 - cos 7.5deg) --
+   * about 0.2px at r=24, i.e. sub-pixel even at a 2x device pixel ratio.
+   *
+   * Sampling rather than arcs because `polygon()` has no arc primitive, and `shape()`, which
+   * does, is far too new to rely on inside whatever Android WebView a wall tablet is running.
+   */
+  private static _notchPathCache?: { clip: string; ring: string };
+
+  private static readonly _NOTCH_ARC = Array.from({ length: 7 }, (_, step) => {
+    const phi = (step * Math.PI) / 12;
+    const trim = (value: number) => Number(value.toFixed(5));
+    return { c: trim(1 - Math.cos(phi)), s: trim(1 - Math.sin(phi)) };
+  });
+
+  /**
+   * Traces the notched outline clockwise from the left edge as a `polygon()` point list.
+   *
+   * Every coordinate stays symbolic -- calc() over custom properties -- so the card never has
+   * to know its own pixel width, which is what keeps this a pure stylesheet concern with no
+   * measurement, no ResizeObserver and no re-render on resize.
+   *
+   * `edges` names the four box edges plus the notch's two cut edges, and `radii` the three
+   * corner radii in play. Passing the eroded set of both yields the inner boundary of the
+   * outline ring.
+   */
+  private static _traceNotch(
+    edges: { left: string; right: string; top: string; bottom: string; notchX: string; notchY: string },
+    radii: { outer: string; corner: string; inner: string },
+  ): string[] {
+    const { left, right, top, bottom, notchX, notchY } = edges;
+    const { outer, corner, inner } = radii;
+
+    const scale = (value: string, factor: number) =>
+      factor === 0 ? null : factor === 1 ? value : `${value} * ${factor}`;
+
+    // Keeps the emitted expressions flat -- calc() does not nest usefully here.
+    const shift = (base: string, term: string | null, sign: '+' | '-') => {
+      if (!term) return base;
+      const body = base.startsWith('calc(') && base.endsWith(')') ? base.slice(5, -1) : base;
+      return `calc(${body} ${sign} ${term})`;
+    };
+
+    const points: string[] = [];
+    type Offsets = { c: number; s: number };
+    const roundCorner = (x: (a: Offsets) => string, y: (a: Offsets) => string) =>
+      DetailedWeatherForecast._NOTCH_ARC.forEach((a) => points.push(`${x(a)} ${y(a)}`));
+
+    // Clockwise. Each arc starts where the previous one left off, so the straight runs
+    // between them are implicit -- there is no such thing as a redundant point here.
+    // top-left
+    roundCorner(
+      (a) => shift(left, scale(outer, a.c), '+'),
+      (a) => shift(top, scale(outer, a.s), '+'),
+    );
+    // top-right
+    roundCorner(
+      (a) => shift(right, scale(outer, a.s), '-'),
+      (a) => shift(top, scale(outer, a.c), '+'),
+    );
+    // where the cut meets the right edge -- convex
+    roundCorner(
+      (a) => shift(right, scale(corner, a.c), '-'),
+      (a) => shift(notchY, scale(corner, a.s), '-'),
+    );
+    // the notch's inner corner -- CONCAVE, so its arc centre sits inside the notch and it
+    // curves the opposite way to the other five.
+    roundCorner(
+      (a) => shift(notchX, scale(inner, a.s), '+'),
+      (a) => shift(notchY, scale(inner, a.c), '+'),
+    );
+    // where the cut meets the bottom edge -- convex
+    roundCorner(
+      (a) => shift(notchX, scale(corner, a.c), '-'),
+      (a) => shift(bottom, scale(corner, a.s), '-'),
+    );
+    // bottom-left
+    roundCorner(
+      (a) => shift(left, scale(outer, a.s), '+'),
+      (a) => shift(bottom, scale(outer, a.c), '-'),
+    );
+
+    return points;
+  }
+
+  /**
+   * The notch silhouette and its outline ring. Both are fully symbolic and therefore constant,
+   * so this is built once for the lifetime of the module rather than per render.
+   */
+  private static _notchPaths(): { clip: string; ring: string } {
+    if (DetailedWeatherForecast._notchPathCache) {
+      return DetailedWeatherForecast._notchPathCache;
+    }
+
+    const outline = DetailedWeatherForecast._traceNotch(
+      {
+        // 0px, NOT 0. A bare zero inside calc() is a <number>, and number + length is a type
+        // error that invalidates the entire polygon -- which silently drops the clip rather
+        // than degrading, taking the notch with it.
+        left: '0px',
+        right: '100%',
+        top: '0px',
+        bottom: '100%',
+        notchX: 'calc(100% - var(--dwf-notch-width))',
+        notchY: 'calc(100% - var(--dwf-notch-height))',
+      },
+      {
+        outer: 'var(--dwf-notch-outer-radius)',
+        corner: 'var(--dwf-notch-corner-radius)',
+        inner: 'var(--dwf-notch-inner-radius)',
+      },
+    );
+
+    // The same outline eroded by one border width. Note the notch GROWS as the card shrinks,
+    // and with it the concave radius, while the convex radii shrink.
+    const eroded = DetailedWeatherForecast._traceNotch(
+      {
+        left: 'var(--dwf-notch-bw)',
+        right: 'calc(100% - var(--dwf-notch-bw))',
+        top: 'var(--dwf-notch-bw)',
+        bottom: 'calc(100% - var(--dwf-notch-bw))',
+        notchX: 'calc(100% - var(--dwf-notch-eroded-width))',
+        notchY: 'calc(100% - var(--dwf-notch-eroded-height))',
+      },
+      {
+        outer: 'var(--dwf-notch-eroded-outer-radius)',
+        corner: 'var(--dwf-notch-eroded-corner-radius)',
+        inner: 'var(--dwf-notch-eroded-inner-radius)',
+      },
+    );
+
+    // One self-closing path enclosing a hole: trace the outside, close it, seam across to the
+    // inside, trace and close that, and let the implicit closing edge retrace the seam. The
+    // doubled seam is degenerate, so `evenodd` counts the interior as outside and drops it.
+    //
+    // Both traces start on the left edge at the same height (the eroded outer radius is
+    // exactly one border width smaller), so that seam is one border width long and invisible.
+    // Reordering either trace will scramble the fill rule -- see PLAN.md.
+    const ring = [...outline, outline[0], ...eroded, eroded[0]];
+
+    DetailedWeatherForecast._notchPathCache = {
+      clip: `polygon(${outline.join(', ')})`,
+      ring: `polygon(evenodd, ${ring.join(', ')})`,
+    };
+
+    return DetailedWeatherForecast._notchPathCache;
   }
 
   private _normalizeIconMap(iconMap?: WeatherIconMap): WeatherIconMap | undefined {
@@ -785,8 +940,19 @@ export class DetailedWeatherForecast extends LitElement {
       // These belong on the root ha-card, not on headerStyles: `.weather-card` is the element
       // the notch rule clips, and custom properties only inherit downward.
       if (this._config?.notch) {
+        const paths = DetailedWeatherForecast._notchPaths();
         styles['--dwf-notch-width'] = String(this._config.notch.width);
         styles['--dwf-notch-height'] = String(this._config.notch.height);
+        // Always emitted, even unconfigured: the generated paths reference these by name, and
+        // an undefined custom property would invalidate the whole clip rather than fall back.
+        styles['--dwf-notch-corner-radius'] = this._config.notch.corner_radius
+          ? String(this._config.notch.corner_radius)
+          : 'var(--ha-card-border-radius, 12px)';
+        styles['--dwf-notch-inner-radius'] = this._config.notch.inner_radius
+          ? String(this._config.notch.inner_radius)
+          : styles['--dwf-notch-corner-radius'];
+        styles['--dwf-notch-clip'] = paths.clip;
+        styles['--dwf-notch-ring'] = paths.ring;
         if (this._config.notch.shadow) {
           styles['--dwf-notch-shadow'] = this._config.notch.shadow;
         }

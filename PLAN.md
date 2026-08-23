@@ -18,7 +18,8 @@ It now reads `--dwf-header-temp-font-size` like its `show_background` counterpar
 `.compact-header`, which beats any `:host` or theme override.
 
 **Sizing options added 2026-08-22/23**, all defaulting to previous behaviour: `header_icon_size`,
-`header_chip_font_size`, `header_line_height`, `card_min_height`, `header_padding`.
+`header_chip_font_size`, `header_line_height`, `card_min_height`, `header_padding`. Plus `notch`
+(2026-08-23), which is a shape option rather than a sizing one — see below.
 
 The one worth remembering is `header_line_height`. The compact header set **no** line-height, so
 the condition and temperature inherited roughly 1.6 — a 96px temperature occupied a ~154px box for
@@ -43,19 +44,41 @@ the card renders as an L and a consumer can tuck other cards into the gap. Built
 dashboard's hero band, where the card now spans the full width for its top row and the three
 "find my device" tiles sit in the notch underneath.
 
-Three things about it are non-obvious and will bite anyone who touches it:
+The one thing to hold onto: **`clip-path` cuts the element's PAINTED BOX, which is where a card's
+entire edge treatment lives.** Everything awkward about this feature follows from that.
 
-- **`clip-path` clips the `box-shadow` away entirely**, not just along the cut. The rule therefore
-  sets `box-shadow: none` and swaps in `filter: drop-shadow(...)`, which is applied to the
-  *post-clip* result and so hugs the L. `drop-shadow()` takes **no spread radius**, so a
-  four-length `box-shadow` value will not transfer — that is why `notch.shadow` is documented as
-  "no spread".
-- **The three outer corners stay rounded for free.** `border-radius` rounds the painted background
-  first and the polygon covers those corners; only the step is squared off. Do not try to
-  re-round them.
-- **It also clips the 1px `ha-card` border along the two step edges**, since the border is painted
-  on the box the polygon cuts through. Invisible against a light theme, a visible hairline gap
-  against a dark one.
+- **The `box-shadow` cannot survive it** — it is clipped away with everything else, leaving the
+  card flat. The rule sets `box-shadow: none` and swaps in `filter: drop-shadow(...)`, applied to
+  the *post-clip* result so it hugs the L. `drop-shadow()` takes **no spread radius**, so a
+  four-length `box-shadow` value will not transfer — hence "no spread" in the docs. Note this also
+  makes the shadow scale with the element's own alpha, so a translucent card gets a weaker shadow
+  than an opaque neighbour. No fix for that short of abandoning `drop-shadow`.
+- **The border cannot survive it either**, so the whole outline is redrawn as a ring
+  (`.weather-card.notched::after`): the silhouette and its one-border-width-eroded copy in a
+  single `evenodd` path, filled with `--ha-card-border-color`. A partial stroke along just the two
+  new edges is not an option — `border-*` cannot follow an arc, so it could never join the
+  surviving border cleanly at the step. The card keeps `border-color: transparent` rather than
+  `border: none`, which holds every metric and the clip's coordinate space identical.
+- **The ring is one path with a hole.** Trace the outside, close it, seam across to the inside,
+  trace and close that, and let the implicit closing edge retrace the seam. The doubled seam is
+  degenerate so `evenodd` drops the interior. Both traces start on the left edge at the same
+  height, which keeps the seam one border width long. **Reorder either trace and the fill rule
+  inverts** — the symptom is the card rendering as a solid slab of border colour.
+- **`0` and `0px` are not interchangeable inside `calc()`.** A bare zero is a `<number>`, and
+  number + length is a type error that invalidates the *entire* polygon — which drops the clip
+  silently rather than degrading. Cost an hour on 2026-08-23: the card rendered as an unclipped
+  grey rectangle because the top-left and bottom-left corners were traced from `0`.
+- **Corner radii are separate on purpose** (`corner_radius` / `inner_radius`). Concentric rounding
+  wants them different: a thing sitting in the notch with radius `t` across a gap `g` needs the
+  concave corner at `t + g` for that gap to stay an even width around the corner, while the two
+  convex corners are ordinary outer corners of the card and want its own radius. The kitchen
+  dashboard runs 20px convex against 24px concave for exactly this reason.
+
+Arcs are sampled as 7-point polylines rather than drawn, because `polygon()` has no arc primitive
+and `shape()`, which does, is far too new to rely on inside an Android WebView. Six segments keeps
+the worst-case radial error near 0.2px. Every coordinate stays symbolic — `calc()` over custom
+properties — so the card never needs its own pixel size, and the paths are constant strings built
+once for the module rather than per render.
 
 `--dwf-notch-*` must be set in `cardStyle` (the root `ha-card`) and **not** `headerStyles`, for the
 same reason as `card_min_height`: `.weather-card` is the element being clipped.
