@@ -178,8 +178,8 @@
 }
 
 .attribute-chip {
-  font-size: var(--ha-font-size-m);
-  line-height: calc(6px + var(--ha-font-size-m));
+  font-size: var(--dwf-header-chip-font-size, var(--ha-font-size-m));
+  line-height: calc(6px + var(--dwf-header-chip-font-size, var(--ha-font-size-m)));
   /* background-color: rgba(0, 0, 0, 0.3); */
   padding: var(--ha-space-1, 4px) var(--ha-space-3, 12px);
   /* border-radius: 25px; */
@@ -195,7 +195,7 @@
 
 .attribute-chip .chip-icon {
   margin-right: 6px;
-  --mdc-icon-size: 20px;
+  --mdc-icon-size: var(--dwf-header-chip-icon-size, 1.25em);
   color: inherit;
 }
 
