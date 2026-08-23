@@ -18,6 +18,7 @@ import { localize, setHass } from './localize/localize';
 import {
   DetailedWeatherForecastConfig,
   HeaderAttribute,
+  NotchConfig,
   SunCoordinates,
   WeatherIconMap,
   TimeOfDay,
@@ -187,6 +188,10 @@ export class DetailedWeatherForecast extends LitElement {
       // turn 1.05 into "1.05px". Passed through verbatim so `1.05`, `1.2`, `110%` and `120px`
       // all behave the way CSS expects.
       header_line_height: config.header_line_height,
+      // NOT normalized either: this is a CSS `padding` shorthand, so "12px 16px 6px" has to
+      // survive verbatim. The size normalizer is single-value only and would reject it.
+      header_padding: config.header_padding,
+      notch: this._normalizeNotch(config.notch),
       header_chips: normalizedHeaderChips,
       icon_map: normalizedIconMap,
       daily_min_gap: normalizedDailyMinGap,
@@ -362,6 +367,24 @@ export class DetailedWeatherForecast extends LitElement {
     }
 
     return trimmed;
+  }
+
+  private _normalizeNotch(notch?: NotchConfig): NotchConfig | undefined {
+    if (!notch || typeof notch !== 'object') {
+      return undefined;
+    }
+
+    const width = this._normalizeCssSizeValue(notch.width);
+    const height = this._normalizeCssSizeValue(notch.height);
+    // Both dimensions are required. A half-specified notch would resolve its missing side to
+    // the CSS fallback and silently clip a slice off the card, which is worse than no notch.
+    if (!width || !height) {
+      return undefined;
+    }
+
+    const shadow = typeof notch.shadow === 'string' && notch.shadow.trim() ? notch.shadow.trim() : undefined;
+
+    return { width, height, shadow };
   }
 
   private _normalizeIconMap(iconMap?: WeatherIconMap): WeatherIconMap | undefined {
@@ -759,6 +782,16 @@ export class DetailedWeatherForecast extends LitElement {
         styles['--card-height'] = String(this._config.card_min_height);
       }
 
+      // These belong on the root ha-card, not on headerStyles: `.weather-card` is the element
+      // the notch rule clips, and custom properties only inherit downward.
+      if (this._config?.notch) {
+        styles['--dwf-notch-width'] = String(this._config.notch.width);
+        styles['--dwf-notch-height'] = String(this._config.notch.height);
+        if (this._config.notch.shadow) {
+          styles['--dwf-notch-shadow'] = this._config.notch.shadow;
+        }
+      }
+
       Object.assign(styles, customColors);
 
       return styleMap(styles);
@@ -799,6 +832,10 @@ export class DetailedWeatherForecast extends LitElement {
       headerStyles['--dwf-header-line-height'] = String(this._config.header_line_height);
     }
 
+    if (this._config.header_padding) {
+      headerStyles['--dwf-header-padding'] = String(this._config.header_padding);
+    }
+
     const nowcastPanelTemplate = html`
       <div
         class="nowcast-panel"
@@ -830,7 +867,7 @@ export class DetailedWeatherForecast extends LitElement {
         : nothing;
 
     return html`
-      <ha-card class="weather-card" style=${cardStyle}>
+      <ha-card class="weather-card${this._config?.notch ? ' notched' : ''}" style=${cardStyle}>
         ${customColorStyles} ${!showHeader ? getAnimationTemplate() : nothing}
         ${showHeader
           ? html`

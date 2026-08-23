@@ -1,6 +1,6 @@
 # detailed-weather-forecast — Repo Overview
 
-> Snapshot: 2026-08-22. Part of the Home Assistant **file/code lane** workspace.
+> Snapshot: 2026-08-23. Part of the Home Assistant **file/code lane** workspace.
 > The root [`../CLAUDE.md`](../CLAUDE.md) is the authority on workspace-wide rules
 > (incl. the **push/deploy autonomy policy**); this file is a quick factual overview
 > of *this repo*. **Keep it current** — see *Keeping this file current* at the bottom.

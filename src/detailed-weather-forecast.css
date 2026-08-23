@@ -44,6 +44,31 @@
   overflow: visible;
 }
 
+/*
+ * Notched (L-shaped) card -- a rectangular bite out of the bottom-right corner so another
+ * card can tuck into the gap. Set via the `notch:` option; see NotchConfig in types.ts.
+ *
+ * The three OUTER corners keep their rounding for free: border-radius rounds the painted
+ * background first and the polygon covers those corners, so only the step is squared off.
+ *
+ * The box-shadow swap is not cosmetic. clip-path clips the shadow away along with everything
+ * else, which would leave the card completely flat. `filter` applies to the post-clip result,
+ * so a drop-shadow there hugs the L instead. NOTE drop-shadow() takes no spread radius -- a
+ * box-shadow value with four lengths will not transfer.
+ */
+.weather-card.notched {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--dwf-notch-height)),
+    calc(100% - var(--dwf-notch-width)) calc(100% - var(--dwf-notch-height)),
+    calc(100% - var(--dwf-notch-width)) 100%,
+    0 100%
+  );
+  box-shadow: none;
+  filter: drop-shadow(var(--dwf-notch-shadow, 0 4px 16px rgba(20, 22, 28, 0.1)));
+}
+
 .animation-container {
   position: absolute;
   inset: 0;
@@ -815,7 +840,10 @@ dwf-current-weather-attributes {
   color: var(--primary-text-color);
 }
 .compact-header .current-conditions {
-  padding: var(--ha-space-4, 16px);
+  /* A full `padding` shorthand, so an asymmetric value can trim the row's height without
+     also costing the condition text its horizontal room. This row's height is what caps how
+     deep a bottom notch can be cut. */
+  padding: var(--dwf-header-padding, var(--ha-space-4, 16px));
   display: flex;
   justify-content: space-between;
   align-items: center;

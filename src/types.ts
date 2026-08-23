@@ -30,6 +30,22 @@ export interface HeaderConditionConfig {
   double_tap_action?: ActionConfig;
 }
 
+/**
+ * Cuts a rectangular bite out of the card's bottom-right corner, turning it into an L so
+ * other cards can tuck into the gap. `width`/`height` are measured in from the right and
+ * bottom edges respectively.
+ *
+ * `shadow` exists because `clip-path` clips the card's `box-shadow` away entirely; the
+ * notched rule swaps it for a `filter: drop-shadow()`, which is applied to the post-clip
+ * result and therefore hugs the L. Give it a `box-shadow` value WITHOUT a spread radius --
+ * `drop-shadow()` has no spread parameter.
+ */
+export interface NotchConfig {
+  width?: number | string;
+  height?: number | string;
+  shadow?: string;
+}
+
 export interface DetailedWeatherForecastConfig extends LovelaceCardConfig {
   type: 'custom:detailed-weather-forecast-card';
   entity: string;
@@ -58,7 +74,9 @@ export interface DetailedWeatherForecastConfig extends LovelaceCardConfig {
   header_icon_size?: number | string;
   header_chip_font_size?: number | string;
   header_line_height?: number | string;
+  header_padding?: number | string;
   card_min_height?: number | string;
+  notch?: NotchConfig;
   hourly_extra_attribute?: ExtraForecastAttributeConfig;
   daily_extra_attribute?: ExtraForecastAttributeConfig;
   solar_forecast_entries?: string[];
