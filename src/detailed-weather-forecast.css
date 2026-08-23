@@ -808,7 +808,7 @@ dwf-current-weather-attributes {
 }
 
 .compact-header {
-  --icon-size: 60px;
+  --icon-size: var(--dwf-header-icon-size, 60px);
   display: flex;
   flex-direction: column;
   color: var(--primary-text-color);
@@ -827,9 +827,11 @@ dwf-current-weather-attributes {
   font-size: var(--dwf-header-condition-font-size, var(--ha-font-size-2xl, 24px));
   font-weight: var(--ha-font-weight-normal, 400);
   text-align: left;
-  padding: 0 var(--ha-space-4, 16px);
+  padding: 0 var(--ha-space-2, 8px);
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .compact-header .weather-icon {
   display: flex;
@@ -842,7 +844,7 @@ dwf-current-weather-attributes {
   --mdc-icon-size: var(--icon-size);
 }
 .compact-header .temp {
-  font-size: var(--ha-font-size-3xl, 28px);
+  font-size: var(--dwf-header-temp-font-size, var(--ha-font-size-3xl, 28px));
   font-weight: var(--ha-font-weight-normal, 400);
   position: relative;
   overflow: hidden;

@@ -180,6 +180,7 @@ export class DetailedWeatherForecast extends LitElement {
       header_condition: config.header_condition,
       header_font_size: this._normalizeCssSizeValue(config.header_font_size),
       temp_font_size: this._normalizeCssSizeValue(config.temp_font_size),
+      header_icon_size: this._normalizeCssSizeValue(config.header_icon_size),
       header_chips: normalizedHeaderChips,
       icon_map: normalizedIconMap,
       daily_min_gap: normalizedDailyMinGap,
@@ -774,6 +775,10 @@ export class DetailedWeatherForecast extends LitElement {
 
     if (this._config.temp_font_size) {
       headerStyles['--dwf-header-temp-font-size'] = String(this._config.temp_font_size);
+    }
+
+    if (this._config.header_icon_size) {
+      headerStyles['--dwf-header-icon-size'] = String(this._config.header_icon_size);
     }
 
     const nowcastPanelTemplate = html`
