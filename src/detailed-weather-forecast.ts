@@ -182,6 +182,11 @@ export class DetailedWeatherForecast extends LitElement {
       temp_font_size: this._normalizeCssSizeValue(config.temp_font_size),
       header_icon_size: this._normalizeCssSizeValue(config.header_icon_size),
       header_chip_font_size: this._normalizeCssSizeValue(config.header_chip_font_size),
+      card_min_height: this._normalizeCssSizeValue(config.card_min_height),
+      // NOT normalized: line-height is meant to be unitless, and the size normalizer would
+      // turn 1.05 into "1.05px". Passed through verbatim so `1.05`, `1.2`, `110%` and `120px`
+      // all behave the way CSS expects.
+      header_line_height: config.header_line_height,
       header_chips: normalizedHeaderChips,
       icon_map: normalizedIconMap,
       daily_min_gap: normalizedDailyMinGap,
@@ -750,6 +755,10 @@ export class DetailedWeatherForecast extends LitElement {
         }
       }
 
+      if (this._config?.card_min_height) {
+        styles['--card-height'] = String(this._config.card_min_height);
+      }
+
       Object.assign(styles, customColors);
 
       return styleMap(styles);
@@ -784,6 +793,10 @@ export class DetailedWeatherForecast extends LitElement {
 
     if (this._config.header_chip_font_size) {
       headerStyles['--dwf-header-chip-font-size'] = String(this._config.header_chip_font_size);
+    }
+
+    if (this._config.header_line_height) {
+      headerStyles['--dwf-header-line-height'] = String(this._config.header_line_height);
     }
 
     const nowcastPanelTemplate = html`

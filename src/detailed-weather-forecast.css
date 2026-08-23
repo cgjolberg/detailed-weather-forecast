@@ -139,6 +139,7 @@
 .compact-header.header-only {
   height: 100%;
   flex: 1 1 auto;
+  justify-content: center;
   border-bottom-left-radius: var(--ha-card-border-radius, 12px);
   border-bottom-right-radius: var(--ha-card-border-radius, 12px);
 }
@@ -825,6 +826,7 @@ dwf-current-weather-attributes {
 .compact-header .condition {
   flex: 1;
   font-size: var(--dwf-header-condition-font-size, var(--ha-font-size-2xl, 24px));
+  line-height: var(--dwf-header-line-height, normal);
   font-weight: var(--ha-font-weight-normal, 400);
   text-align: left;
   padding: 0 var(--ha-space-2, 8px);
@@ -845,6 +847,7 @@ dwf-current-weather-attributes {
 }
 .compact-header .temp {
   font-size: var(--dwf-header-temp-font-size, var(--ha-font-size-3xl, 28px));
+  line-height: var(--dwf-header-line-height, normal);
   font-weight: var(--ha-font-weight-normal, 400);
   position: relative;
   overflow: hidden;
